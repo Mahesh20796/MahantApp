@@ -1,7 +1,7 @@
-    <div class="app-layout" [class.no-sidebar]="!(auth.currentUser$ | async) || router.url === '/login'">
+    <div class="app-layout" [class.no-sidebar]="!(auth.currentUser$ | async) || router.url.includes('/login') || router.url === '/'">
       
       <!-- Mobile Header Button -->
-      <div class="mobile-header" *ngIf="(auth.currentUser$ | async) as user" [hidden]="router.url === '/login'">
+      <div class="mobile-header" *ngIf="(auth.currentUser$ | async) as user" [hidden]="router.url.includes('/login') || router.url === '/'">
         <div style="font-size: 1.2rem; font-weight: 800; color: white;">Sabha <span style="color: var(--primary);">Connect</span></div>
         <button class="menu-toggle-btn" (click)="toggleMobileMenu()">
           {{ isMobileMenuOpen ? '✕' : '☰' }}
@@ -9,7 +9,7 @@
       </div>
 
       <!-- Sidebar -->
-      <aside class="sidebar" [class.sidebar-open]="isMobileMenuOpen" *ngIf="(auth.currentUser$ | async) as user" [hidden]="router.url === '/login'">
+      <aside class="sidebar" [class.sidebar-open]="isMobileMenuOpen" *ngIf="(auth.currentUser$ | async) as user" [hidden]="router.url.includes('/login') || router.url === '/'">
         <div class="sidebar-header">
            <div style="font-size: 2.5rem; margin-bottom: 8px; filter: drop-shadow(0 0 12px var(--primary));">🌌</div>
            <div style="font-size: 1.4rem; font-weight: 800; letter-spacing: -0.025em; color: white;">Sabha <span style="color: var(--primary);">Connect</span></div>

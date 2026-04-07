@@ -251,6 +251,12 @@ body {
   flex: 1;
   margin-left: 280px;
   padding: 40px;
+  transition: all 0.3s ease;
+}
+
+.app-layout.no-sidebar .main-content {
+  margin-left: 0;
+  padding: 0;
 }
 
 /* Premium Card Design */
@@ -564,6 +570,10 @@ body {
   .main-content {
     margin-left: 0;
     padding: 80px 16px 24px 16px; /* Added top padding to account for mobile-header */
+  }
+
+  .app-layout.no-sidebar .main-content {
+    padding: 0; /* Remove padding on login screen for mobile too */
   }
 
   .stats-grid {
