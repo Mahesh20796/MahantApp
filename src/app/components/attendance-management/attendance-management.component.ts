@@ -1,0 +1,260 @@
+import { Component, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { SupabaseService } from '../../services/supabase.service';
+
+interface AttendanceRecord {
+  memberId: string;
+  memberName: string;
+  role: string;
+  memberStatus: string;
+  status: 'P' | 'A' | 'L' | null;
+  timestamp: Date | null;
+}
+
+@Component({
+  selector: 'app-attendance-management',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
+    <div class="card animate-fade-in" style="min-height: 80vh; position: relative;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 20px;">
+         <div>
+            <h2 class="card-title" style="margin-bottom: 4px;">📝 Attendance Tracking</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; font-weight: 500;">Record and manage presence for scheduled meetings.</p>
+         </div>
+         <div style="text-align: right;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Current Session Date</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: var(--primary);">{{ selectedDate | date:'fullDate' }}</div>
+         </div>
+      </div>
+      
+      <div style="background: var(--bg-sidebar-hover); padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-bottom: 32px;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" style="font-size: 0.75rem; color: var(--text-muted);">Active Sabha Module</label>
+          <select class="form-control premium-input" [(ngModel)]="selectedSabhaId" (change)="onSabhaChange()">
+            <option value="" disabled>-- Select Sabha --</option>
+            <option *ngFor="let s of sabhas" [value]="s.id">{{ s.title }}</option>
+          </select>
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" style="font-size: 0.75rem; color: var(--text-muted);">Operational Date</label>
+          <input type="date" class="form-control premium-input" [(ngModel)]="selectedDate" (change)="loadAttendance()">
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" style="font-size: 0.75rem; color: var(--text-muted);">Instant Search</label>
+          <div style="position: relative;">
+            <input type="text" class="form-control premium-input" [(ngModel)]="searchQuery" (ngModelChange)="currentPage = 1" placeholder="Search member name...">
+            <span style="position: absolute; right: 12px; top: 12px; opacity: 0.4;">🔍</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Member Identity</th>
+              <th>Status Badge</th>
+              <th>Log Time</th>
+              <th style="text-align: right;">Mark Attendance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let record of paginatedAttendanceList" class="table-row-hover">
+              <td>
+                <div style="display: flex; align-items: center; gap: 14px;">
+                   <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--primary); font-size: 0.9rem; border: 1px solid var(--border-color);">
+                      {{ record.memberName.charAt(0) }}
+                   </div>
+                   <div>
+                      <div style="font-weight: 700; color: var(--text-dark); font-size: 0.95rem;">{{ record.memberName }}</div>
+                      <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">{{ record.role }}</div>
+                   </div>
+                </div>
+              </td>
+              <td>
+                <span class="badge" *ngIf="record.status" 
+                      [style.background]="record.status === 'P' ? 'rgba(16, 185, 129, 0.15)' : (record.status === 'A' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)')"
+                      [style.color]="record.status === 'P' ? '#10b981' : (record.status === 'A' ? '#ef4444' : '#f59e0b')"
+                      [style.border]="record.status === 'P' ? '1px solid rgba(16, 185, 129, 0.2)' : (record.status === 'A' ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(245, 158, 11, 0.2)')">
+                  {{ record.status === 'P' ? 'Present ✅' : record.status === 'A' ? 'Absent ❌' : 'Leave 🏠' }}
+                </span>
+                <span *ngIf="!record.status" style="color: var(--text-muted); background: var(--bg-sidebar-hover); padding: 8px 14px; border-radius: 10px; font-size: 0.75rem; font-weight: 800; border: 1px solid var(--border-color); letter-spacing: 0.05em;">UNMARKED</span>
+              </td>
+              <td style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">
+                <span *ngIf="record.timestamp">🕒 {{ record.timestamp | date:'shortTime' }}</span>
+                <span *ngIf="!record.timestamp">--:--</span>
+              </td>
+              <td>
+                <div style="display:flex; gap: 8px; justify-content: flex-end;">
+                  <button class="btn" [style.background]="record.status === 'P' ? '#10b981' : 'var(--bg-sidebar-hover)'" [style.color]="record.status === 'P' ? 'white' : 'var(--text-muted)'" style="padding: 10px 18px; border-radius: 12px; border: 1px solid var(--border-color); font-weight: 800; transition: all 0.3s;" (click)="mark(record, 'P')">P</button>
+                  <button class="btn" [style.background]="record.status === 'A' ? '#ef4444' : 'var(--bg-sidebar-hover)'" [style.color]="record.status === 'A' ? 'white' : 'var(--text-muted)'" style="padding: 10px 18px; border-radius: 12px; border: 1px solid var(--border-color); font-weight: 800; transition: all 0.3s;" (click)="mark(record, 'A')">A</button>
+                  <button class="btn" [style.background]="record.status === 'L' ? '#f59e0b' : 'var(--bg-sidebar-hover)'" [style.color]="record.status === 'L' ? 'white' : 'var(--text-muted)'" style="padding: 10px 18px; border-radius: 12px; border: 1px solid var(--border-color); font-weight: 800; transition: all 0.3s;" (click)="mark(record, 'L')">L</button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="attendanceList.length === 0">
+               <td colspan="4" style="text-align: center; padding: 100px;">
+                  <div style="font-size: 3rem; opacity: 0.1; margin-bottom: 16px;">📋</div>
+                  <div style="font-weight: 700; color: #94a3b8;">No members found for this configuration.</div>
+               </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Footer Actions -->
+      <div style="margin-top: auto; padding-top: 32px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+         <!-- Pagination -->
+         <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="btn" style="background: var(--bg-sidebar-hover); border: 1px solid var(--border-color); padding: 12px; border-radius: 14px; color: var(--text-dark);" [disabled]="currentPage === 1" (click)="previousPage()">←</button>
+            <span style="font-size: 0.9rem; font-weight: 800; color: var(--text-muted); padding: 0 16px;">P. {{ currentPage }} / {{ totalPages || 1 }}</span>
+            <button class="btn" style="background: var(--bg-sidebar-hover); border: 1px solid var(--border-color); padding: 12px; border-radius: 14px; color: var(--text-dark);" [disabled]="currentPage === totalPages" (click)="nextPage()">→</button>
+         </div>
+
+         <button class="btn" (click)="saveAttendance()" [disabled]="!isAllMarked()" 
+                 [style.background]="isAllMarked() ? 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)' : 'var(--bg-sidebar-hover)'"
+                 style="height: 56px; padding: 0 48px; border-radius: var(--radius-md); color: white; font-weight: 800; font-size: 1rem; border: none; box-shadow: var(--shadow-premium);">
+           💾 Commit Attendance Records
+         </button>
+      </div>
+    </div>
+  `
+})
+export class AttendanceManagementComponent implements OnInit {
+  supabaseService = inject(SupabaseService);
+  
+  sabhas: any[] = [];
+  selectedSabhaId: string = '';
+  selectedDate: string = '';
+  searchQuery: string = '';
+  attendanceList: AttendanceRecord[] = [];
+
+  currentPage: number = 1;
+  pageSize: number = 5;
+
+  get filteredAttendanceList() {
+    if (!this.searchQuery) return this.attendanceList;
+    return this.attendanceList.filter(record => 
+      record.memberName.toLowerCase().includes(this.searchQuery.toLowerCase())
+    );
+  }
+
+  get paginatedAttendanceList() {
+    const list = this.filteredAttendanceList;
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    return list.slice(startIndex, startIndex + this.pageSize);
+  }
+
+  get totalPages() {
+    return Math.ceil(this.filteredAttendanceList.length / this.pageSize);
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+    }
+  }
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+    }
+  }
+
+  async ngOnInit() {
+    await this.loadSabhas();
+    if (this.sabhas.length > 0) {
+      this.selectedSabhaId = this.sabhas[0].id;
+      this.selectedDate = new Date().toISOString().split('T')[0]; // Default to today
+      this.onSabhaChange();
+    }
+  }
+
+  async loadSabhas() {
+    try {
+      this.sabhas = await this.supabaseService.getSabhas();
+    } catch (error) {
+      console.error('Error loading sabhas:', error);
+    }
+  }
+
+  onSabhaChange() {
+    this.loadAttendance();
+  }
+
+  async loadAttendance() {
+    if (!this.selectedSabhaId || !this.selectedDate) return;
+    this.currentPage = 1;
+    try {
+      const members = await this.supabaseService.getMembers();
+      
+      // Filter existing attendance for EXACTLY this Sabha and this Date
+      const { data: existingAttendance } = await this.supabaseService.client
+        .from('attendance')
+        .select('*')
+        .eq('sabha_id', this.selectedSabhaId)
+        .eq('attendance_date', this.selectedDate);
+        
+      const selectedSabha = this.sabhas.find(s => s.id === this.selectedSabhaId);
+      const sabhaTitle = selectedSabha ? selectedSabha.title : '';
+
+      this.attendanceList = members
+        .filter((m: any) => m.status === 'Active' && m.sabha_name === sabhaTitle)
+        .map((m: any) => {
+          const att = existingAttendance?.find(a => a.member_id === m.id);
+          return {
+            memberId: m.id,
+            memberName: m.name,
+            role: m.role,
+            memberStatus: m.status,
+            status: att ? att.status : null,
+            timestamp: att ? new Date(att.time_marked) : null
+          };
+        });
+    } catch (e) {
+      console.error('Error loading attendance', e);
+    }
+  }
+
+  mark(record: AttendanceRecord, status: 'P' | 'A' | 'L') {
+    record.status = status;
+    record.timestamp = new Date();
+  }
+
+  isAllMarked(): boolean {
+    return this.attendanceList.length > 0 && this.attendanceList.every(record => record.status !== null);
+  }
+
+  async saveAttendance() {
+    const payload = this.attendanceList
+      .filter(record => record.status !== null)
+      .map(record => {
+        // Construct the timestamp using the selectedDate
+        const markedDate = new Date(this.selectedDate);
+        markedDate.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues/duplicates on same day
+
+        return {
+          sabha_id: this.selectedSabhaId,
+          member_id: record.memberId,
+          status: record.status,
+          attendance_date: this.selectedDate, // Explicitly sending the date for unique constraint
+          time_marked: markedDate.toISOString()
+        };
+      });
+
+    if (payload.length === 0) return;
+
+    try {
+      await this.supabaseService.saveAttendance(payload);
+      alert('Attendance saved successfully to Supabase for the selected Sabha!');
+      this.loadAttendance(); // Refresh to show saved status
+    } catch (error: any) {
+      console.error(error);
+      alert('Failed to save attendance: ' + (error.message || 'Unknown error'));
+    }
+  }
+}

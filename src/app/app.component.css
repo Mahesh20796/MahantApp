@@ -1,0 +1,8 @@
+.app-layout.no-sidebar {
+  display: block;
+}
+
+.app-layout.no-sidebar .main-content {
+  margin-left: 0;
+  padding: 0;
+}

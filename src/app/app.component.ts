@@ -1,0 +1,105 @@
+import { Component, inject, HostListener, ViewChild, ElementRef } from '@angular/core';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { AuthService } from './services/auth.service';
+import { ThemeService } from './services/theme.service';
+import { SupabaseService } from './services/supabase.service';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, FormsModule],
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.css'
+})
+export class AppComponent {
+  auth = inject(AuthService);
+  theme = inject(ThemeService);
+  router = inject(Router);
+  supabase = inject(SupabaseService);
+  
+  title = 'Sabha Management System';
+
+  isSearchOpen = false;
+  searchQuery = '';
+  searchResults: any[] = [];
+
+  @ViewChild('searchInput') searchInputElement!: ElementRef;
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyDown(event: KeyboardEvent) {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+      event.preventDefault();
+      this.openSearch();
+    }
+    if (event.key === 'Escape' && this.isSearchOpen) {
+      this.closeSearch();
+    }
+  }
+
+  openSearch() {
+    this.isSearchOpen = true;
+    this.searchQuery = '';
+    this.searchResults = [];
+    setTimeout(() => {
+      this.searchInputElement?.nativeElement.focus();
+    }, 100);
+  }
+
+  closeSearch() {
+    this.isSearchOpen = false;
+  }
+
+  async onSearchInput() {
+    if (this.searchQuery.length < 2) {
+      this.searchResults = [];
+      return;
+    }
+
+    try {
+      const query = this.searchQuery.toLowerCase();
+      
+      // Parallel search for speed
+      const [membersRes, sabhasRes] = await Promise.all([
+        this.supabase.client.from('members')
+          .select('id, name, contact_details, email_id')
+          .or(`name.ilike.%${query}%,contact_details.ilike.%${query}%,email_id.ilike.%${query}%`)
+          .limit(5),
+        this.supabase.client.from('sabhas')
+          .select('id, title, sabha_type')
+          .ilike('title', `%${query}%`)
+          .limit(5)
+      ]);
+
+      const results: any[] = [];
+      
+      if (membersRes.data) {
+        membersRes.data.forEach((m: any) => results.push({
+          title: m.name,
+          subtitle: `Member • ${m.contact_details}`,
+          icon: '👥',
+          link: '/members'
+        }));
+      }
+
+      if (sabhasRes.data) {
+        sabhasRes.data.forEach((s: any) => results.push({
+          title: s.title,
+          subtitle: `Sabha • ${s.sabha_type}`,
+          icon: '📅',
+          link: '/sabhas'
+        }));
+      }
+
+      this.searchResults = results;
+    } catch (e) {
+      console.error('Search error:', e);
+    }
+  }
+
+  navigateTo(path: string) {
+    this.closeSearch();
+    this.router.navigate([path]);
+  }
+}
