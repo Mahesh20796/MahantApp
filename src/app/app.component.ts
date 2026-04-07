@@ -5,7 +5,8 @@ import { ThemeService } from './services/theme.service';
 import { SupabaseService } from './services/supabase.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { filter } from 'rxjs';
+import { filter, Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { SwUpdate } from '@angular/service-worker';
 
 @Component({
   selector: 'app-root',
@@ -14,11 +15,12 @@ import { filter } from 'rxjs';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   auth = inject(AuthService);
   theme = inject(ThemeService);
   router = inject(Router);
   supabase = inject(SupabaseService);
+  swUpdate = inject(SwUpdate);
   
   title = 'Sabha Management System';
 
@@ -28,12 +30,33 @@ export class AppComponent {
   isMobileMenuOpen = false;
   isLoginPage = false;
 
+  private searchSubject = new Subject<string>();
+
   constructor() {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.isLoginPage = event.url.includes('/login') || event.url === '/' || event.urlAfterRedirects?.includes('/login');
     });
+
+    this.searchSubject.pipe(
+      debounceTime(400),
+      distinctUntilChanged()
+    ).subscribe(query => {
+      this.executeSearch(query);
+    });
+  }
+
+  ngOnInit() {
+    if (this.swUpdate.isEnabled) {
+      this.swUpdate.versionUpdates.subscribe(event => {
+        if (event.type === 'VERSION_READY') {
+          if (confirm('A new version is available. Load New Version?')) {
+            window.location.reload();
+          }
+        }
+      });
+    }
   }
 
   @ViewChild('searchInput') searchInputElement!: ElementRef;
@@ -62,14 +85,18 @@ export class AppComponent {
     this.isSearchOpen = false;
   }
 
-  async onSearchInput() {
-    if (this.searchQuery.length < 2) {
+  onSearchInput() {
+    this.searchSubject.next(this.searchQuery);
+  }
+
+  async executeSearch(searchQuery: string) {
+    if (searchQuery.length < 2) {
       this.searchResults = [];
       return;
     }
 
     try {
-      const query = this.searchQuery.toLowerCase();
+      const query = searchQuery.toLowerCase();
       
       // Parallel search for speed
       const [membersRes, sabhasRes] = await Promise.all([

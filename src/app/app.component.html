@@ -4,7 +4,7 @@
       <div class="mobile-header" *ngIf="(auth.currentUser$ | async) as user; else noNav">
         <ng-container *ngIf="!isLoginPage">
           <div style="font-size: 1.2rem; font-weight: 800; color: white;">Sabha <span style="color: var(--primary);">Connect</span></div>
-          <button class="menu-toggle-btn" (click)="toggleMobileMenu()">
+          <button class="menu-toggle-btn" (click)="toggleMobileMenu()" aria-label="Toggle Menu">
             {{ isMobileMenuOpen ? '✕' : '☰' }}
           </button>
         </ng-container>
@@ -40,7 +40,7 @@
                   <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">👑 {{ user.role }}</div>
                 </div>
               </div>
-              <button (click)="theme.toggleTheme()" class="btn" style="padding: 10px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; transition: all 0.3s;">
+              <button (click)="theme.toggleTheme()" class="btn" aria-label="Toggle Theme" style="padding: 10px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; transition: all 0.3s;">
                 {{ theme.darkMode() ? '☀️' : '🌙' }}
               </button>
            </div>
