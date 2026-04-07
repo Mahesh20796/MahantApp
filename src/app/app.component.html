@@ -1,19 +1,28 @@
     <div class="app-layout" [class.no-sidebar]="!(auth.currentUser$ | async) || router.url === '/login'">
+      
+      <!-- Mobile Header Button -->
+      <div class="mobile-header" *ngIf="(auth.currentUser$ | async) as user" [hidden]="router.url === '/login'">
+        <div style="font-size: 1.2rem; font-weight: 800; color: white;">Sabha <span style="color: var(--primary);">Connect</span></div>
+        <button class="menu-toggle-btn" (click)="toggleMobileMenu()">
+          {{ isMobileMenuOpen ? '✕' : '☰' }}
+        </button>
+      </div>
+
       <!-- Sidebar -->
-      <aside class="sidebar" *ngIf="(auth.currentUser$ | async) as user" [hidden]="router.url === '/login'">
+      <aside class="sidebar" [class.sidebar-open]="isMobileMenuOpen" *ngIf="(auth.currentUser$ | async) as user" [hidden]="router.url === '/login'">
         <div class="sidebar-header">
            <div style="font-size: 2.5rem; margin-bottom: 8px; filter: drop-shadow(0 0 12px var(--primary));">🌌</div>
            <div style="font-size: 1.4rem; font-weight: 800; letter-spacing: -0.025em; color: white;">Sabha <span style="color: var(--primary);">Connect</span></div>
         </div>
         
         <nav style="padding-top: 24px;">
-          <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">📊 Dashboard</a>
-          <a routerLink="/sabhas" routerLinkActive="active" class="nav-link">🗓️ Sabha History</a>
-          <a routerLink="/members" routerLinkActive="active" class="nav-link">👥 Member Registry</a>
-          <a routerLink="/roles" routerLinkActive="active" class="nav-link">🛡️ System Roles</a>
-          <a routerLink="/attendance" routerLinkActive="active" class="nav-link">📝 Attendance</a>
-          <a routerLink="/wallet" routerLinkActive="active" class="nav-link">💳 Financials</a>
-          <a routerLink="/reports" routerLinkActive="active" class="nav-link">📈 Reports</a>
+          <a (click)="navigateTo('/dashboard')" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link" [class.active]="router.url.includes('/dashboard')">📊 Dashboard</a>
+          <a (click)="navigateTo('/sabhas')" routerLinkActive="active" class="nav-link" [class.active]="router.url.includes('/sabhas')">🗓️ Sabha History</a>
+          <a (click)="navigateTo('/members')" routerLinkActive="active" class="nav-link" [class.active]="router.url.includes('/members')">👥 Member Registry</a>
+          <a (click)="navigateTo('/roles')" routerLinkActive="active" class="nav-link" [class.active]="router.url.includes('/roles')">🛡️ System Roles</a>
+          <a (click)="navigateTo('/attendance')" routerLinkActive="active" class="nav-link" [class.active]="router.url.includes('/attendance')">📝 Attendance</a>
+          <a (click)="navigateTo('/wallet')" routerLinkActive="active" class="nav-link" [class.active]="router.url.includes('/wallet')">💳 Financials</a>
+          <a (click)="navigateTo('/reports')" routerLinkActive="active" class="nav-link" [class.active]="router.url.includes('/reports')">📈 Reports</a>
         </nav>
 
         <!-- Profile / Logout / Theme -->

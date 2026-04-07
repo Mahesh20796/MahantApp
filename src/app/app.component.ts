@@ -24,6 +24,7 @@ export class AppComponent {
   isSearchOpen = false;
   searchQuery = '';
   searchResults: any[] = [];
+  isMobileMenuOpen = false;
 
   @ViewChild('searchInput') searchInputElement!: ElementRef;
 
@@ -100,6 +101,15 @@ export class AppComponent {
 
   navigateTo(path: string) {
     this.closeSearch();
+    this.closeMobileMenu();
     this.router.navigate([path]);
+  }
+
+  toggleMobileMenu() {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+  }
+
+  closeMobileMenu() {
+    this.isMobileMenuOpen = false;
   }
 }
