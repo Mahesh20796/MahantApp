@@ -1,10 +1,11 @@
-import { Component, inject, HostListener, ViewChild, ElementRef } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { Component, inject, HostListener, ViewChild, ElementRef, OnInit } from '@angular/core';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { AuthService } from './services/auth.service';
 import { ThemeService } from './services/theme.service';
 import { SupabaseService } from './services/supabase.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -25,6 +26,15 @@ export class AppComponent {
   searchQuery = '';
   searchResults: any[] = [];
   isMobileMenuOpen = false;
+  isLoginPage = false;
+
+  constructor() {
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: any) => {
+      this.isLoginPage = event.url.includes('/login') || event.url === '/' || event.urlAfterRedirects?.includes('/login');
+    });
+  }
 
   @ViewChild('searchInput') searchInputElement!: ElementRef;
 

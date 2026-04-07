@@ -1,15 +1,18 @@
-    <div class="app-layout" [class.no-sidebar]="!(auth.currentUser$ | async) || router.url.includes('/login') || router.url === '/'">
+    <div class="app-layout" [class.no-sidebar]="!(auth.currentUser$ | async) || isLoginPage">
       
       <!-- Mobile Header Button -->
-      <div class="mobile-header" *ngIf="(auth.currentUser$ | async) as user" [hidden]="router.url.includes('/login') || router.url === '/'">
-        <div style="font-size: 1.2rem; font-weight: 800; color: white;">Sabha <span style="color: var(--primary);">Connect</span></div>
-        <button class="menu-toggle-btn" (click)="toggleMobileMenu()">
-          {{ isMobileMenuOpen ? '✕' : '☰' }}
-        </button>
+      <div class="mobile-header" *ngIf="(auth.currentUser$ | async) as user; else noNav">
+        <ng-container *ngIf="!isLoginPage">
+          <div style="font-size: 1.2rem; font-weight: 800; color: white;">Sabha <span style="color: var(--primary);">Connect</span></div>
+          <button class="menu-toggle-btn" (click)="toggleMobileMenu()">
+            {{ isMobileMenuOpen ? '✕' : '☰' }}
+          </button>
+        </ng-container>
       </div>
 
       <!-- Sidebar -->
-      <aside class="sidebar" [class.sidebar-open]="isMobileMenuOpen" *ngIf="(auth.currentUser$ | async) as user" [hidden]="router.url.includes('/login') || router.url === '/'">
+      <aside class="sidebar" [class.sidebar-open]="isMobileMenuOpen" *ngIf="(auth.currentUser$ | async) as user">
+        <ng-container *ngIf="!isLoginPage">
         <div class="sidebar-header">
            <div style="font-size: 2.5rem; margin-bottom: 8px; filter: drop-shadow(0 0 12px var(--primary));">🌌</div>
            <div style="font-size: 1.4rem; font-weight: 800; letter-spacing: -0.025em; color: white;">Sabha <span style="color: var(--primary);">Connect</span></div>
@@ -53,6 +56,7 @@
               🔒 Log Out
            </a>
         </div>
+        </ng-container>
       </aside>
 
       <!-- Global Search Modal -->
@@ -95,4 +99,6 @@
       <main class="main-content">
         <router-outlet></router-outlet>
       </main>
+
+      <ng-template #noNav></ng-template>
     </div>
