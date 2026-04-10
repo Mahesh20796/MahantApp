@@ -10,12 +10,12 @@ import { Role } from '../../models/role.model';
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <div class="card animate-fade-in" style="margin-bottom: 24px;">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
         <div>
           <h2 class="card-title" style="margin-bottom: 4px;">🛡️ Role Management</h2>
           <p style="color: var(--text-muted); font-size: 0.85rem; font-weight: 500;">Define and maintain system-wide roles and permissions.</p>
         </div>
-        <button class="btn" [ngClass]="showForm ? 'btn-danger' : 'btn-primary'" (click)="toggleForm()" style="height: 44px; border-radius: 12px;">
+        <button class="btn" [ngClass]="showForm ? 'btn-danger' : 'btn-primary'" (click)="toggleForm()" style="height: 44px; border-radius: 12px; white-space: nowrap; flex-shrink: 0;">
           {{ showForm ? '✕ Close Form' : '+ Create New Role' }}
         </button>
       </div>
@@ -49,7 +49,7 @@ import { Role } from '../../models/role.model';
     </div>
 
     <div class="card animate-slide-up" *ngIf="!showForm">
-      <div class="table-responsive">
+      <div class="table-responsive hide-on-mobile">
         <table class="table">
           <thead>
             <tr>
@@ -77,13 +77,40 @@ import { Role } from '../../models/role.model';
               <td style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600;">{{r.created_at | date:'mediumDate'}}</td>
               <td>
                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                  <button class="btn" style="padding: 10px; background: var(--bg-sidebar-hover); border: 1px solid var(--border-color); color: var(--text-muted); border-radius: var(--radius-md);" (click)="editRole(r)">✏️</button>
-                  <button class="btn" style="padding: 10px; background: rgba(225, 29, 72, 0.05); border: 1px solid rgba(225, 29, 72, 0.1); color: var(--danger); border-radius: var(--radius-md);" (click)="deleteRole(r.id)">🗑️</button>
+                   <button class="btn" style="padding: 10px; background: var(--bg-sidebar-hover); border: 1px solid var(--border-color); color: var(--text-muted); border-radius: var(--radius-md);" (click)="editRole(r)">✏️</button>
+                   <button class="btn" style="padding: 10px; background: rgba(225, 29, 72, 0.05); border: 1px solid rgba(225, 29, 72, 0.1); color: var(--danger); border-radius: var(--radius-md);" (click)="deleteRole(r.id)">🗑️</button>
                 </div>
               </td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Mobile Card Layout for Roles -->
+      <div class="show-on-mobile">
+        <div class="mobile-card-list">
+          <div *ngFor="let r of roles" class="mobile-card">
+            <div class="mobile-card-header">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--primary-soft); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">🛡️</div>
+                <div>
+                  <div style="font-weight: 700; color: var(--text-dark);">{{r.name}}</div>
+                  <div style="font-size: 0.7rem; color: var(--text-muted);">Fiscal Year: {{r.year}}</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mobile-card-body">
+              <p style="margin: 0; line-height: 1.4;">{{r.description}}</p>
+              <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 8px;">Created: {{r.created_at | date:'mediumDate'}}</div>
+            </div>
+
+            <div class="mobile-card-actions">
+              <button class="btn" style="padding: 8px 16px; background: var(--bg-sidebar-hover); border: 1px solid var(--border-color); color: var(--text-muted); border-radius: var(--radius-md); font-size: 0.8rem;" (click)="editRole(r)">✏️ Edit</button>
+              <button class="btn" style="padding: 8px 16px; background: rgba(225, 29, 72, 0.05); border: 1px solid rgba(225, 29, 72, 0.1); color: var(--danger); border-radius: var(--radius-md); font-size: 0.8rem;" (click)="deleteRole(r.id)">🗑️ Delete</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   `

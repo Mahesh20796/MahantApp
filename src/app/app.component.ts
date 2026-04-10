@@ -48,6 +48,10 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit() {
+    // Initial check for login page to avoid sidebar flicker
+    const currentUrl = window.location.pathname;
+    this.isLoginPage = currentUrl.includes('/login') || currentUrl === '/';
+
     if (this.swUpdate.isEnabled) {
       this.swUpdate.versionUpdates.subscribe(event => {
         if (event.type === 'VERSION_READY') {

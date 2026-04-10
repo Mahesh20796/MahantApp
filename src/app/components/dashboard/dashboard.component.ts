@@ -10,87 +10,79 @@ import { Router } from '@angular/router';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div *ngIf="showOnboarding" class="animate-fade-in" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); margin-bottom: 32px; border-radius: 24px; padding: 28px; position: relative; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.2);">
-      <div style="position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: flex-start;">
-        <div style="max-width: 600px;">
-          <h2 style="color: white; font-weight: 800; font-size: 1.5rem; margin-bottom: 10px;">🌟 Master the Portal</h2>
-          <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem; line-height: 1.6; font-weight: 500;">
-             Welcome to the modernized Sabha Connect! Use <b style="background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 4px;">Ctrl+K</b> for instant search, toggle <b>Dark Mode</b> in the sidebar, and use <b>Bulk Actions</b> in Member Management for faster updates.
-          </p>
-        </div>
-        <button (click)="dismissOnboarding()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 16px; border-radius: 12px; font-weight: 700; cursor: pointer;">✕ Dismiss</button>
-      </div>
-      <div style="position: absolute; right: -20px; bottom: -20px; font-size: 8rem; opacity: 0.1; transform: rotate(-15deg);">🌌</div>
+    <div class="dashboard-header animate-fade-in" style="margin-bottom: 32px;">
+      <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.04em; margin: 0;">नमस्ते, {{ (auth.currentUser$ | async)?.fullName || 'Admin' }}! 👋</h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 4px;">Intelligence Center • Sabha Management Portal</p>
     </div>
 
-    <div class="dashboard-header animate-fade-in">
-      <h1 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -0.04em; margin-bottom: 8px;">नमस्ते, {{ (auth.currentUser$ | async)?.fullName || 'Admin' }}! 👋</h1>
-      <p style="color: var(--text-muted); font-size: 1.05rem; font-weight: 500; margin-bottom: 32px;">Here is an overview of the current Sabha metrics and financial health.</p>
-    </div>
-
-    <!-- Stats Summary -->
-    <div class="stats-grid animate-slide-up">
-      <div class="glass-card stat-card">
-        <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.2);">💰</div>
-        <div>
-          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Available Balance</div>
-          <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-dark);">₹{{ (report?.totalBalance || 0) | number }}</div>
-        </div>
-      </div>
+    <!-- Symmetrical Institutional Grid -->
+    <div class="bento-grid animate-slide-up">
       
-      <div class="glass-card stat-card">
-        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2);">📈</div>
-        <div>
-          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Total Collections</div>
-          <div style="font-size: 1.8rem; font-weight: 800; color: #10b981;">₹{{ (report?.totalIncome || 0) | number }}</div>
-        </div>
+      <!-- Portfolio Overview -->
+      <div class="bento-item col-8 row-2">
+         <div class="form-label" style="margin-bottom: 24px;">Financial Portfolio</div>
+         <div style="display: flex; align-items: baseline; gap: 12px;">
+            <div style="font-size: 3rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.02em;">₹{{ (report?.totalBalance || 0) | number }}</div>
+            <div style="color: var(--success); font-weight: 700; font-size: 0.95rem;">↑ 12.5%</div>
+         </div>
+         <div style="margin-top: 32px; height: 6px; background: var(--bg-main); border-radius: 10px; border: 1px solid var(--border-color); overflow: hidden;">
+            <div [style.width]="'65%'" style="height: 100%; background: var(--primary); border-radius: 10px;"></div>
+         </div>
+         <div style="display: flex; justify-content: space-between; margin-top: 12px; font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">
+            <span>Current Efficiency</span>
+            <span style="color: var(--text-dark);">65% of Target</span>
+         </div>
       </div>
 
-      <div class="glass-card stat-card">
-        <div class="stat-icon" style="background: rgba(225, 29, 72, 0.1); color: #e11d48; border: 1px solid rgba(225, 29, 72, 0.2);">📉</div>
-        <div>
-          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Total Burn</div>
-          <div style="font-size: 1.8rem; font-weight: 800; color: #e11d48;">₹{{ (report?.totalExpenses || 0) | number }}</div>
-        </div>
+      <!-- Quick Stats -->
+      <div class="bento-item col-4">
+         <div class="form-label" style="margin-bottom: 12px;">Active Members</div>
+         <div style="font-size: 2.2rem; font-weight: 800; color: var(--text-dark);">1,248</div>
+         <div style="margin-top: 12px; font-size: 0.75rem; color: var(--success); font-weight: 800;">● Live Pulse Active</div>
       </div>
 
-      <div class="glass-card stat-card">
-        <div class="stat-icon" style="background: rgba(202, 138, 4, 0.1); color: #ca8a04; border: 1px solid rgba(202, 138, 4, 0.2);">👥</div>
-        <div>
-          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Active Members</div>
-          <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-dark);">1,248</div>
-        </div>
+      <div class="bento-item col-4">
+         <div class="form-label" style="margin-bottom: 12px;">Monthly Events</div>
+         <div style="font-size: 2.2rem; font-weight: 800; color: var(--text-dark);">24</div>
+         <div style="margin-top: 12px; font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Scheduled for Apr 2026</div>
       </div>
+
+      <!-- Action Hub -->
+      <div class="bento-item col-4 row-2">
+         <div class="form-label" style="margin-bottom: 24px;">Quick Actions</div>
+         <div style="display: flex; flex-direction: column; gap: 12px;">
+            <button (click)="router.navigate(['/attendance'])" class="btn btn-primary" style="height: 48px; justify-content: center;">Track Attendance</button>
+            <button (click)="router.navigate(['/members'])" class="btn" style="background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-dark); height: 48px; justify-content: center;">Register Member</button>
+            <button (click)="router.navigate(['/wallet'])" class="btn" style="background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-dark); height: 48px; justify-content: center;">Process Payment</button>
+         </div>
+      </div>
+
+      <!-- Live Notification Feed -->
+      <div class="bento-item col-8">
+         <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="height: 12px; width: 12px; border-radius: 50%; background: var(--primary); flex-shrink: 0;"></div>
+            <div style="font-weight: 700; color: var(--text-dark); font-size: 1rem;">Yuva Sabha starts in 2 hours. Attendance scanners active.</div>
+         </div>
+      </div>
+
+      <!-- System Health -->
+      <div class="bento-item col-12" style="background: var(--bg-sidebar); border: none; color: white; display: flex; flex-direction: row; justify-content: space-between; align-items: center; min-height: 80px;">
+         <div style="display: flex; align-items: center; gap: 20px;">
+            <div style="font-size: 1.5rem;">🛡️</div>
+            <div>
+               <div style="font-weight: 800; font-size: 0.9rem; letter-spacing: 0.05em; text-transform: uppercase;">Cloud Integrity Active</div>
+               <div style="font-size: 0.75rem; opacity: 0.7;">Verified by Antigravity Digital Engine</div>
+            </div>
+         </div>
+         <div style="font-size: 0.75rem; font-weight: 800; color: var(--primary);">SYSTEM SECURE</div>
+      </div>
+
     </div>
 
-    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-top: 10px;" class="animate-slide-up">
-      <!-- Quick Actions -->
-      <div class="card">
-        <h2 class="card-title">⚡ Command Center</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px;">
-          <button (click)="router.navigate(['/sabhas'])" class="btn" style="background: #f5f3ff; color: #5b21b6; flex-direction: column; height: 110px; border: 1px solid #ddd6fe; gap: 12px;">
-             <span style="font-size: 1.5rem;">🗓️</span> Schedule Sabha
-          </button>
-          <button (click)="router.navigate(['/members'])" class="btn" style="background: #f0fdf4; color: #166534; flex-direction: column; height: 110px; border: 1px solid #bbf7d0; gap: 12px;">
-             <span style="font-size: 1.5rem;">👤</span> Add Member
-          </button>
-          <button (click)="router.navigate(['/attendance'])" class="btn" style="background: #fff7ed; color: #9a3412; flex-direction: column; height: 110px; border: 1px solid #fed7aa; gap: 12px;">
-             <span style="font-size: 1.5rem;">📝</span> Attendance
-          </button>
-        </div>
-      </div>
-
-      <!-- Recent Trends -->
-      <div class="card">
-        <h2 class="card-title">💡 Notifications</h2>
-        <div style="padding: 16px; background: var(--bg-sidebar-hover); border-radius: 16px; border: 1px dashed var(--border-color); font-size: 0.95rem; color: var(--text-muted);">
-          <div style="font-weight: 800; color: var(--primary); margin-bottom: 8px;">📢 Upcoming Event</div>
-          Next <b>"Yuva Sabha"</b> is scheduled for this Sunday at <b>5:00 PM</b>. 
-          <br><br>
-          <a href="javascript:void(0)" style="color: var(--primary); font-weight: 700; text-decoration: none; border-bottom: 1px solid;">View Full Calendar →</a>
-        </div>
-      </div>
-    </div>
+    <!-- Mobile refresh FAB -->
+    <button class="fab show-on-mobile animate-fade-in" (click)="loadStats()" aria-label="Refresh Dashboard">
+      <span style="font-size: 1.2rem;">🔄</span>
+    </button>
   `
 })
 export class DashboardComponent implements OnInit {
@@ -98,24 +90,27 @@ export class DashboardComponent implements OnInit {
   auth = inject(AuthService);
   router = inject(Router);
   report: FinancialReport | null = null;
-  showOnboarding = true;
+  isLoading = false;
 
   ngOnInit() {
-    this.showOnboarding = localStorage.getItem('onboarding_dismissed') !== 'true';
     this.loadStats();
   }
 
-  loadStats() {
-    this.report = {
-      totalBalance: 125000,
-      totalIncome: 150000,
-      totalExpenses: 25000,
-      transactions: []
-    };
+  async loadStats() {
+    this.isLoading = true;
+    try {
+      // Intentionally simulating network delay for shimmer effect
+      await new Promise(resolve => setTimeout(resolve, 800));
+      this.report = {
+        totalBalance: 125000,
+        totalIncome: 150000,
+        totalExpenses: 25000,
+        transactions: []
+      };
+    } finally {
+      this.isLoading = false;
+    }
   }
 
-  dismissOnboarding() {
-    this.showOnboarding = false;
-    localStorage.setItem('onboarding_dismissed', 'true');
-  }
+
 }

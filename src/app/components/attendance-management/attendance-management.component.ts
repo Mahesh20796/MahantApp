@@ -17,7 +17,11 @@ interface AttendanceRecord {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="card animate-fade-in" style="min-height: 80vh; position: relative;">
+    <div class="card animate-fade-in" style="min-height: 80vh; position: relative; overflow: hidden;">
+      <!-- Skeleton Overlay for Form/Header -->
+      <div *ngIf="isLoading && attendanceList.length === 0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--glass-bg); display: flex; align-items: center; justify-content: center; z-index: 10; border-radius: var(--radius-lg); backdrop-filter: blur(4px);">
+        <div class="skeleton" style="width: 80%; height: 80%;"></div>
+      </div>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 20px;">
          <div>
             <h2 class="card-title" style="margin-bottom: 4px;">📝 Attendance Tracking</h2>
@@ -26,6 +30,8 @@ interface AttendanceRecord {
          <div style="text-align: right;">
             <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Current Session Date</div>
             <div style="font-size: 1.25rem; font-weight: 800; color: var(--primary);">{{ selectedDate | date:'fullDate' }}</div>
+            <div *ngIf="unmarkedCount > 0" style="font-size: 0.7rem; color: var(--warning); font-weight: 700;">⚠️ {{ unmarkedCount }} members remaining</div>
+            <div *ngIf="unmarkedCount === 0 && attendanceList.length > 0" style="font-size: 0.7rem; color: var(--success); font-weight: 700;">✅ Everyone marked</div>
          </div>
       </div>
       
@@ -52,7 +58,7 @@ interface AttendanceRecord {
         </div>
       </div>
 
-      <div class="table-responsive">
+      <div class="table-responsive hide-on-mobile">
         <table class="table">
           <thead>
             <tr>
@@ -67,7 +73,7 @@ interface AttendanceRecord {
               <td>
                 <div style="display: flex; align-items: center; gap: 14px;">
                    <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--primary); font-size: 0.9rem; border: 1px solid var(--border-color);">
-                      {{ record.memberName.charAt(0) }}
+                      {{ record.memberName ? record.memberName.charAt(0) : '?' }}
                    </div>
                    <div>
                       <div style="font-weight: 700; color: var(--text-dark); font-size: 0.95rem;">{{ record.memberName }}</div>
@@ -85,25 +91,70 @@ interface AttendanceRecord {
                 <span *ngIf="!record.status" style="color: var(--text-muted); background: var(--bg-sidebar-hover); padding: 8px 14px; border-radius: 10px; font-size: 0.75rem; font-weight: 800; border: 1px solid var(--border-color); letter-spacing: 0.05em;">UNMARKED</span>
               </td>
               <td style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">
-                <span *ngIf="record.timestamp">🕒 {{ record.timestamp | date:'shortTime' }}</span>
+                <span *ngIf="record.timestamp">🕒 {{ (record.timestamp | date:'h:mm:ss a':'UTC') | lowercase }}</span>
                 <span *ngIf="!record.timestamp">--:--</span>
               </td>
               <td>
                 <div style="display:flex; gap: 8px; justify-content: flex-end;">
-                  <button class="btn" [style.background]="record.status === 'P' ? '#10b981' : 'var(--bg-sidebar-hover)'" [style.color]="record.status === 'P' ? 'white' : 'var(--text-muted)'" style="padding: 10px 18px; border-radius: 12px; border: 1px solid var(--border-color); font-weight: 800; transition: all 0.3s;" (click)="mark(record, 'P')">P</button>
-                  <button class="btn" [style.background]="record.status === 'A' ? '#ef4444' : 'var(--bg-sidebar-hover)'" [style.color]="record.status === 'A' ? 'white' : 'var(--text-muted)'" style="padding: 10px 18px; border-radius: 12px; border: 1px solid var(--border-color); font-weight: 800; transition: all 0.3s;" (click)="mark(record, 'A')">A</button>
-                  <button class="btn" [style.background]="record.status === 'L' ? '#f59e0b' : 'var(--bg-sidebar-hover)'" [style.color]="record.status === 'L' ? 'white' : 'var(--text-muted)'" style="padding: 10px 18px; border-radius: 12px; border: 1px solid var(--border-color); font-weight: 800; transition: all 0.3s;" (click)="mark(record, 'L')">L</button>
+                  <button class="btn" [style.background]="record.status === 'P' ? 'var(--success)' : 'var(--bg-sidebar-hover)'" [style.color]="record.status === 'P' ? 'white' : 'var(--text-muted)'" style="padding: 10px 18px; border-radius: 12px; border: 1px solid var(--border-color); font-weight: 800; transition: all 0.3s;" (click)="mark(record, 'P')">P</button>
+                  <button class="btn" [style.background]="record.status === 'A' ? 'var(--danger)' : 'var(--bg-sidebar-hover)'" [style.color]="record.status === 'A' ? 'white' : 'var(--text-muted)'" style="padding: 10px 18px; border-radius: 12px; border: 1px solid var(--border-color); font-weight: 800; transition: all 0.3s;" (click)="mark(record, 'A')">A</button>
+                  <button class="btn" [style.background]="record.status === 'L' ? 'var(--warning)' : 'var(--bg-sidebar-hover)'" [style.color]="record.status === 'L' ? 'white' : 'var(--text-muted)'" style="padding: 10px 18px; border-radius: 12px; border: 1px solid var(--border-color); font-weight: 800; transition: all 0.3s;" (click)="mark(record, 'L')">L</button>
                 </div>
               </td>
             </tr>
-            <tr *ngIf="attendanceList.length === 0">
-               <td colspan="4" style="text-align: center; padding: 100px;">
-                  <div style="font-size: 3rem; opacity: 0.1; margin-bottom: 16px;">📋</div>
-                  <div style="font-weight: 700; color: #94a3b8;">No members found for this configuration.</div>
-               </td>
-            </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Skeleton Loader for List -->
+      <div *ngIf="isLoading && attendanceList.length === 0" style="padding: 20px;">
+        <div *ngFor="let i of [1,2,3,4,5]" class="skeleton" style="height: 100px; margin-bottom: 16px; border-radius: var(--radius-md); opacity: 0.5;"></div>
+      </div>
+
+      <!-- Mobile card layout for attendance -->
+      <div class="show-on-mobile" *ngIf="!isLoading || attendanceList.length > 0">
+        <div class="mobile-card-list">
+          <div *ngFor="let record of filteredAttendanceList" class="mobile-card">
+            <div class="mobile-card-header">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--primary);">
+                  {{ record.memberName ? record.memberName.charAt(0) : '?' }}
+                </div>
+                <div>
+                  <div style="font-weight: 700; color: var(--text-dark);">{{ record.memberName }}</div>
+                  <div style="font-size: 0.7rem; color: var(--text-muted);">{{ record.role }}</div>
+                </div>
+              </div>
+              <span *ngIf="record.timestamp" style="font-size: 0.65rem; color: var(--text-muted);">🕒 {{ (record.timestamp | date:'h:mm:ss a':'UTC') | lowercase }}</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px;">
+              <button class="btn" (click)="mark(record, 'P')" 
+                      [style.background]="record.status === 'P' ? 'var(--success)' : 'var(--bg-sidebar-hover)'" 
+                      [style.color]="record.status === 'P' ? 'white' : 'var(--text-muted)'"
+                      style="justify-content: center; padding: 12px; border: 1px solid var(--border-color); font-weight: 800;">
+                PRESENT
+              </button>
+              <button class="btn" (click)="mark(record, 'A')" 
+                      [style.background]="record.status === 'A' ? 'var(--danger)' : 'var(--bg-sidebar-hover)'" 
+                      [style.color]="record.status === 'A' ? 'white' : 'var(--text-muted)'"
+                      style="justify-content: center; padding: 12px; border: 1px solid var(--border-color); font-weight: 800;">
+                ABSENT
+              </button>
+              <button class="btn" (click)="mark(record, 'L')" 
+                      [style.background]="record.status === 'L' ? 'var(--warning)' : 'var(--bg-sidebar-hover)'" 
+                      [style.color]="record.status === 'L' ? 'white' : 'var(--text-muted)'"
+                      style="justify-content: center; padding: 12px; border: 1px solid var(--border-color); font-weight: 800;">
+                LEAVE
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="attendanceList.length === 0" style="text-align: center; padding: 60px 20px;">
+        <div style="font-size: 3rem; opacity: 0.1; margin-bottom: 16px;">📋</div>
+        <div style="font-weight: 700; color: #94a3b8;">No members found for this configuration.</div>
       </div>
       
       <!-- Footer Actions -->
@@ -115,12 +166,16 @@ interface AttendanceRecord {
             <button class="btn" style="background: var(--bg-sidebar-hover); border: 1px solid var(--border-color); padding: 12px; border-radius: 14px; color: var(--text-dark);" [disabled]="currentPage === totalPages" (click)="nextPage()">→</button>
          </div>
 
-         <button class="btn" (click)="saveAttendance()" [disabled]="!isAllMarked()" 
-                 [style.background]="isAllMarked() ? 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)' : 'var(--bg-sidebar-hover)'"
+         <button class="btn" (click)="saveAttendance()" [disabled]="!isAnyMarked || isLoading" 
+                 [style.background]="isAnyMarked ? 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)' : 'var(--bg-sidebar-hover)'"
                  style="height: 56px; padding: 0 48px; border-radius: var(--radius-md); color: white; font-weight: 800; font-size: 1rem; border: none; box-shadow: var(--shadow-premium);">
            💾 Commit Attendance Records
          </button>
       </div>
+      <!-- Floating Action Button for Mobile Commit -->
+      <button class="fab show-on-mobile animate-fade-in" (click)="saveAttendance()" *ngIf="isAnyMarked" [disabled]="isLoading" aria-label="Commit Records Swapped">
+        <span style="font-size: 1.5rem;">💾</span>
+      </button>
     </div>
   `
 })
@@ -132,6 +187,15 @@ export class AttendanceManagementComponent implements OnInit {
   selectedDate: string = '';
   searchQuery: string = '';
   attendanceList: AttendanceRecord[] = [];
+  isLoading = false;
+
+  get unmarkedCount() {
+    return this.attendanceList.filter(r => r.status === null).length;
+  }
+
+  get isAnyMarked() {
+    return this.attendanceList.some(r => r.status !== null);
+  }
 
   currentPage: number = 1;
   pageSize: number = 5;
@@ -189,21 +253,24 @@ export class AttendanceManagementComponent implements OnInit {
   async loadAttendance() {
     if (!this.selectedSabhaId || !this.selectedDate) return;
     this.currentPage = 1;
+    this.isLoading = true;
     try {
-      const members = await this.supabaseService.getMembers();
-      
-      // Filter existing attendance for EXACTLY this Sabha and this Date
-      const { data: existingAttendance } = await this.supabaseService.client
-        .from('attendance')
-        .select('*')
-        .eq('sabha_id', this.selectedSabhaId)
-        .eq('attendance_date', this.selectedDate);
+      const [members, existingAttendance] = await Promise.all([
+        this.supabaseService.getMembers(),
+        this.supabaseService.getAttendanceForSabha(this.selectedSabhaId, this.selectedDate)
+      ]);
         
       const selectedSabha = this.sabhas.find(s => s.id === this.selectedSabhaId);
       const sabhaTitle = selectedSabha ? selectedSabha.title : '';
 
       this.attendanceList = members
-        .filter((m: any) => m.status === 'Active' && m.sabha_name === sabhaTitle)
+        .filter((m: any) => {
+           // Case-insensitive flexible matching for Sabha division
+           const memberSabha = (m.sabha_name || '').toLowerCase();
+           const currentSabha = sabhaTitle.toLowerCase();
+           return m.status === 'Active' && 
+                  (memberSabha === currentSabha || currentSabha.includes(memberSabha) || !m.sabha_name);
+        })
         .map((m: any) => {
           const att = existingAttendance?.find(a => a.member_id === m.id);
           return {
@@ -217,12 +284,43 @@ export class AttendanceManagementComponent implements OnInit {
         });
     } catch (e) {
       console.error('Error loading attendance', e);
+    } finally {
+      this.isLoading = false;
     }
   }
 
-  mark(record: AttendanceRecord, status: 'P' | 'A' | 'L') {
+  async mark(record: AttendanceRecord, status: 'P' | 'A' | 'L') {
+    const originalStatus = record.status;
+    const originalTime = record.timestamp;
+    
+    // Update local state for immediate feedback
     record.status = status;
     record.timestamp = new Date();
+    
+    try {
+      // Direct real-time save to Supabase
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      const now = record.timestamp;
+      const visualSyncString = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T` +
+                               `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}Z`;
+
+      const payload = [{
+        sabha_id: this.selectedSabhaId,
+        member_id: record.memberId,
+        status: record.status,
+        attendance_date: this.selectedDate,
+        time_marked: visualSyncString
+      }];
+
+      await this.supabaseService.saveAttendance(payload);
+      console.log(`✅ Real-time save: ${record.memberName} marked ${status}`);
+    } catch (error) {
+      console.error('❌ Real-time save failed:', error);
+      // Revert local state on failure
+      record.status = originalStatus;
+      record.timestamp = originalTime;
+      alert('Failed to save attendance in real-time. Please try again.');
+    }
   }
 
   isAllMarked(): boolean {
@@ -230,31 +328,37 @@ export class AttendanceManagementComponent implements OnInit {
   }
 
   async saveAttendance() {
-    const payload = this.attendanceList
-      .filter(record => record.status !== null)
-      .map(record => {
-        // Construct the timestamp using the selectedDate
-        const markedDate = new Date(this.selectedDate);
-        markedDate.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues/duplicates on same day
-
-        return {
-          sabha_id: this.selectedSabhaId,
-          member_id: record.memberId,
-          status: record.status,
-          attendance_date: this.selectedDate, // Explicitly sending the date for unique constraint
-          time_marked: markedDate.toISOString()
-        };
-      });
-
-    if (payload.length === 0) return;
-
+    // This now serves as a manual "Bulk Sync" button
+    this.isLoading = true;
     try {
-      await this.supabaseService.saveAttendance(payload);
-      alert('Attendance saved successfully to Supabase for the selected Sabha!');
-      this.loadAttendance(); // Refresh to show saved status
+      const payload = this.attendanceList
+        .filter(record => record.status !== null)
+        .map(record => {
+          const now = record.timestamp || new Date();
+          const pad = (n: number) => n.toString().padStart(2, '0');
+          const visualSyncString = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T` +
+                           `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}Z`;
+
+          return {
+            sabha_id: this.selectedSabhaId,
+            member_id: record.memberId,
+            status: record.status,
+            attendance_date: this.selectedDate,
+            time_marked: visualSyncString
+          };
+        });
+
+      if (payload.length > 0) {
+        await this.supabaseService.saveAttendance(payload);
+        alert(`Successfully synced ${payload.length} records!`);
+        await this.loadAttendance();
+      }
     } catch (error: any) {
-      console.error(error);
-      alert('Failed to save attendance: ' + (error.message || 'Unknown error'));
+      console.error('Bulk sync error:', error);
+      alert('Failed to sync records.');
+    } finally {
+      this.isLoading = false;
     }
   }
 }
+

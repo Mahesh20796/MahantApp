@@ -9,177 +9,195 @@ import { Member } from '../../models/member.model';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
   template: `
-    <div class="card animate-fade-in" style="margin-bottom: 24px; position: relative;">
-      <div *ngIf="isLoading" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--glass-bg); display: flex; align-items: center; justify-content: center; z-index: 10; border-radius: var(--radius-lg); backdrop-filter: blur(8px); border: 1px solid var(--glass-border);">
-        <div style="font-weight: 800; color: var(--primary); display: flex; flex-direction: column; align-items: center; gap: 16px;">
-           <span style="font-size: 3rem; animation: spin 2s linear infinite; filter: drop-shadow(0 0 10px var(--primary));">⚙️</span>
-           <span style="letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.8rem;">Synchronizing Registry</span>
-        </div>
-      </div>
-
-      <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div class="card animate-fade-in" style="margin-bottom: 32px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
         <div>
-          <h2 class="card-title" style="margin-bottom: 4px;">👥 Member Management</h2>
-          <p style="color: var(--text-muted); font-size: 0.85rem; font-weight: 500;">Register, manage, and track organization members.</p>
+          <h2 class="card-title" style="margin: 0;">👥 Member Registry</h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Search, register, and manage organization members.</p>
         </div>
-        <button class="btn" [ngClass]="showForm ? 'btn-danger' : 'btn-primary'" (click)="toggleForm()" style="height: 44px; border-radius: 12px;">
-          {{ showForm ? '✕ Close Form' : '+ New Registration' }}
+        <button class="btn" [ngClass]="showForm ? 'btn-danger' : 'btn-primary'" (click)="toggleForm()">
+          {{ showForm ? '✕ Close Portal' : '+ New Registration' }}
         </button>
       </div>
 
-      <div *ngIf="showForm" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-color);">
+      <!-- Registration Form Area -->
+      <div *ngIf="showForm" style="margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--border-color);">
         <form [formGroup]="memberForm" (ngSubmit)="onSubmit()">
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
-            
-            <div style="grid-column: span 3; display: flex; justify-content: center; margin-bottom: 20px;">
-              <div (click)="photoInput.click()" style="width: 100px; height: 100px; border-radius: 24px; background: var(--bg-sidebar-hover); border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; overflow: hidden; transition: all 0.3s;">
-                <img *ngIf="memberForm.get('photo')?.value" [src]="memberForm.get('photo')?.value" style="width: 100%; height: 100%; object-fit: cover;">
-                <span *ngIf="!memberForm.get('photo')?.value" style="font-size: 2rem; opacity: 0.5;">📸</span>
-                <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); color: white; font-size: 0.6rem; padding: 4px; text-align: center; font-weight: 700;">CHANGE</div>
+          <!-- Photo & Basic Identity -->
+          <div style="display: grid; grid-template-columns: 120px 1fr 1fr; gap: 32px; margin-bottom: 32px;">
+            <div (click)="photoInput.click()" style="width: 120px; height: 120px; border-radius: 12px; background: var(--bg-main); border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden;">
+              <img *ngIf="memberForm.get('photo')?.value" [src]="memberForm.get('photo')?.value" style="width: 100%; height: 100%; object-fit: cover;">
+              <div *ngIf="!memberForm.get('photo')?.value" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                <span style="font-size: 2rem; opacity: 0.3;">📸</span>
+                <span style="font-size: 0.6rem; font-weight: 800; color: #ef4444;">REQUIRED *</span>
               </div>
               <input #photoInput type="file" (change)="onFileChange($event)" hidden accept="image/*">
             </div>
-
-            <div class="form-group" style="grid-column: span 1.5;">
-              <label class="form-label">Full Legal Name *</label>
-              <input type="text" class="form-control premium-input" formControlName="name" placeholder="E.g. Ashish Sharma">
+            
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              <div class="form-group" style="margin:0;">
+                <label class="form-label">Full Legal Name *</label>
+                <input type="text" class="form-control" formControlName="name" placeholder="E.g. Ashish Sharma">
+                <div *ngIf="memberForm.get('name')?.touched && memberForm.get('name')?.invalid" style="color: #ef4444; font-size: 0.7rem; margin-top: 4px;">Name is required</div>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label">Primary Contact *</label>
+                <input type="text" class="form-control" formControlName="contactDetails" placeholder="7-15 Digits">
+                <div *ngIf="memberForm.get('contactDetails')?.touched && memberForm.get('contactDetails')?.invalid" style="color: #ef4444; font-size: 0.7rem; margin-top: 4px;">Valid 7-15 digit number required</div>
+              </div>
             </div>
 
-            <div class="form-group">
-              <label class="form-label">Primary Contact *</label>
-              <input type="text" class="form-control premium-input" formControlName="contactDetails" placeholder="10 Digits" maxlength="10">
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Email Address (Optional)</label>
-              <input type="email" class="form-control premium-input" formControlName="emailId" placeholder="ashish@example.com">
-            </div>
-
-            <div class="form-group" style="grid-column: span 1.5;">
-              <label class="form-label">Residential Address *</label>
-              <input type="text" class="form-control premium-input" formControlName="address" placeholder="Flat No, Street, Landmark, City">
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">System Role</label>
-              <select class="form-control premium-input" formControlName="role">
-                <option *ngFor="let role of rolesList" [value]="role.name">{{ role.name }}</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Branch/Sabha</label>
-              <select class="form-control premium-input" formControlName="sabhaName">
-                <option *ngFor="let s of sabhaList" [value]="s.title">{{ s.title }}</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Identity Setup</label>
-              <select class="form-control premium-input" formControlName="status">
-                <option value="Active">Active Account ✅</option>
-                <option value="Inactive">Inactive Account ❌</option>
-              </select>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              <div class="form-group" style="margin:0;">
+                <label class="form-label">Email Address *</label>
+                <input type="email" class="form-control" formControlName="emailId" placeholder="ashish@example.com">
+                <div *ngIf="memberForm.get('emailId')?.touched && memberForm.get('emailId')?.invalid" style="color: #ef4444; font-size: 0.7rem; margin-top: 4px;">Valid email is required</div>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label">System Role *</label>
+                <select class="form-control" formControlName="role">
+                  <option *ngFor="let role of rolesList" [value]="role.name">{{ role.name }}</option>
+                </select>
+              </div>
             </div>
           </div>
+
+          <!-- Extended Information -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+             <div class="form-group">
+                <label class="form-label">Residential Address *</label>
+                <input type="text" class="form-control" formControlName="address" placeholder="Full address details">
+                <div *ngIf="memberForm.get('address')?.touched && memberForm.get('address')?.invalid" style="color: #ef4444; font-size: 0.7rem; margin-top: 4px;">Address is required</div>
+             </div>
+             <div class="form-group">
+                <label class="form-label">Branch/Sabha *</label>
+                <select class="form-control" formControlName="sabhaName">
+                  <option *ngFor="let s of sabhaList" [value]="s.title">{{ s.title }}</option>
+                </select>
+             </div>
+             <div class="form-group">
+                <label class="form-label">Account Status *</label>
+                <select class="form-control" formControlName="status">
+                  <option value="Active">Active Account</option>
+                  <option value="Inactive">Inactive Account</option>
+                </select>
+             </div>
+          </div>
           
-          <div style="display: flex; justify-content: flex-end; margin-top: 24px; gap: 12px;">
-            <button type="submit" class="btn btn-success" [disabled]="memberForm.invalid || isLoading" style="height: 52px; min-width: 200px; justify-content: center; font-size: 1rem; border-radius: var(--radius-md); box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.2);">
-              {{ editingId ? '💾 Update Profile' : '✨ Complete Enrollment' }}
+          <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border-color); padding-top: 24px;">
+            <button type="button" class="btn" (click)="toggleForm()" style="background: var(--bg-main); color: var(--text-dark);">Discard</button>
+            <button type="submit" class="btn btn-primary" [disabled]="isLoading" style="min-width: 140px; justify-content: center;">
+              {{ (isLoading) ? 'Processing...' : (editingId ? 'Update Record' : 'Create Registry Item') }}
             </button>
+          </div>
+          <div *ngIf="memberForm.invalid && memberForm.touched" style="text-align: right; color: #ef4444; font-size: 0.75rem; margin-top: 12px; font-weight: 600;">
+             Please complete all required fields with valid data.
           </div>
         </form>
       </div>
-    </div>
 
-    <div class="card animate-slide-up" *ngIf="!showForm">
-      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; gap: 20px; flex-wrap: wrap;">
-        <div>
-           <h2 class="card-title" style="margin-bottom: 4px;">📋 Member Registry</h2>
-           <p style="color: var(--text-muted); font-size: 0.85rem; font-weight: 500;">Viewing all active and inactive members.</p>
+      <!-- Data Search & List Overlay -->
+      <div *ngIf="!showForm" style="margin-top: 32px;">
+        <div style="margin-bottom: 24px;">
+           <div style="position: relative; width: 100%; max-width: 400px;">
+              <input type="text" class="form-control" placeholder="Search by name or mobile..." [(ngModel)]="searchQuery" style="padding-left: 40px; background: var(--bg-main);">
+              <span style="position: absolute; left: 14px; top: 12px; opacity: 0.3;">🔍</span>
+           </div>
         </div>
-        <div style="position: relative; width: 100%; max-width: 320px;">
-           <input type="text" class="form-control premium-input" placeholder="Search by name or mobile..." [(ngModel)]="searchQuery" style="background: var(--bg-main);">
-           <span style="position: absolute; right: 14px; top: 12px; opacity: 0.5;">🔍</span>
-        </div>
-      </div>
 
-      <div class="table-responsive">
-        <table class="table">
-          <thead>
-            <tr>
-              <th style="width: 40px;">
-                 <input type="checkbox" [checked]="isAllSelected()" (change)="toggleAll($event)">
-              </th>
-              <th>Personal Identity</th>
-              <th>Communication</th>
-              <th>Organization</th>
-              <th>Status</th>
-              <th style="text-align: right;">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let m of filteredMembers" class="table-row-hover" [class.row-selected]="selectedMemberIds.has(m.id!)">
-              <td>
-                 <input type="checkbox" [checked]="selectedMemberIds.has(m.id!)" (change)="toggleSelection(m.id!)">
-              </td>
-              <td>
-                <div style="display: flex; align-items: center; gap: 16px;">
-                  <div style="width: 52px; height: 52px; border-radius: 16px; background: var(--bg-sidebar-hover); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; overflow: hidden; font-weight: 800; color: var(--primary); font-size: 1.2rem; box-shadow: var(--shadow-sm);">
+        <div class="table-responsive hide-on-mobile">
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="width: 40px;"><input type="checkbox" [checked]="isAllSelected()" (change)="toggleAll($event)"></th>
+                <th>Member Profile</th>
+                <th>Contact Details</th>
+                <th>Affiliation</th>
+                <th>Account Status</th>
+                <th style="text-align: right;">Operations</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let m of filteredMembers" class="table-row-hover">
+                <td><input type="checkbox" [checked]="selectedMemberIds.has(m.id!)" (change)="toggleSelection(m.id!)"></td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 8px; background: var(--bg-main); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; overflow: hidden; font-weight: 700; font-size: 0.9rem;">
+                      <img *ngIf="m.photo" [src]="m.photo" style="width: 100%; height: 100%; object-fit: cover;">
+                      <span *ngIf="!m.photo" style="color: var(--primary);">{{m.name.charAt(0) | uppercase}}</span>
+                    </div>
+                    <div>
+                      <div style="font-weight: 700; color: var(--text-dark);">{{m.name}}</div>
+                      <div style="font-size: 0.7rem; color: var(--text-muted);">{{m.address}}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight: 600; font-size: 0.85rem;">{{m.contactDetails}}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">{{m.emailId || 'No Email'}}</div>
+                </td>
+                <td>
+                  <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px;">{{m.role}}</div>
+                  <div style="font-size: 0.8rem; font-weight: 600; color: var(--primary);">🏰 {{m.sabhaName}}</div>
+                </td>
+                <td>
+                  <span class="badge" [ngClass]="m.status === 'Active' ? 'badge-active' : 'badge-inactive'">
+                     {{ m.status }}
+                  </span>
+                </td>
+                <td style="text-align: right;">
+                  <button class="btn" style="padding: 8px; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.85rem;" (click)="editMember(m)">Edit</button>
+                  <button class="btn" style="padding: 8px; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.1); color: var(--danger); font-size: 0.85rem; margin-left: 8px;" (click)="deleteMember(m.id!)">Delete</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Skeleton Loader for List -->
+        <div *ngIf="isLoading && members.length === 0" style="padding: 20px;">
+          <div *ngFor="let i of [1,2,3,4]" class="skeleton" style="height: 64px; margin-bottom: 12px; border-radius: 8px;"></div>
+        </div>
+
+        <!-- Mobile View (Institutional Cards) -->
+        <div class="show-on-mobile mobile-card-list">
+          <div *ngFor="let m of filteredMembers" class="card" style="padding: 16px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="width: 40px; height: 40px; border-radius: 8px; background: var(--bg-main); display:flex; align-items:center; justify-content:center; overflow:hidden;">
                     <img *ngIf="m.photo" [src]="m.photo" style="width: 100%; height: 100%; object-fit: cover;">
-                    <span *ngIf="!m.photo">{{m.name.charAt(0) | uppercase}}</span>
-                  </div>
-                  <div>
-                    <div style="font-weight: 700; color: var(--text-dark); font-size: 0.95rem; margin-bottom: 2px;">{{m.name}}</div>
-                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">📍 {{m.address}}</div>
-                  </div>
+                    <span *ngIf="!m.photo" style="font-weight: 700; color: var(--primary);">{{ m.name.charAt(0) }}</span>
                 </div>
-              </td>
-              <td>
-                <div style="font-weight: 600; color: #475569; font-size: 0.9rem; margin-bottom: 2px;">📱 {{m.contactDetails}}</div>
-                <div *ngIf="m.emailId" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">✉️ {{m.emailId}}</div>
-              </td>
-              <td>
-                <span class="badge" style="background: var(--bg-sidebar-hover); color: var(--text-muted); border: 1px solid var(--border-color); margin-bottom: 4px;">{{m.role}}</span>
-                <div style="font-size: 0.8rem; font-weight: 800; color: var(--primary);">🏰 {{m.sabhaName}}</div>
-              </td>
-              <td>
-                <span class="badge" [ngClass]="m.status === 'Active' ? 'badge-active' : 'badge-inactive'">
-                  {{ (m.status === 'Active' ? '🟢 ' : '🔴 ') + m.status }}
-                </span>
-              </td>
-              <td>
-                <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                  <button class="btn" style="padding: 10px; background: var(--bg-sidebar-hover); border: 1px solid var(--border-color); color: var(--text-muted); border-radius: var(--radius-md);" (click)="editMember(m)">✏️</button>
-                  <button class="btn" style="padding: 10px; background: rgba(225, 29, 72, 0.05); border: 1px solid rgba(225, 29, 72, 0.1); color: var(--danger); border-radius: var(--radius-md);" (click)="deleteMember(m.id)">🗑️</button>
-                </div>
-              </td>
-            </tr>
-            <tr *ngIf="filteredMembers.length === 0 && !isLoading">
-               <td colspan="6" style="text-align: center; padding: 80px; background: #fafafa; border-radius: 0 0 20px 20px;">
-                  <div style="font-size: 3rem; margin-bottom: 16px; opacity: 0.2;">🗂️</div>
-                  <div style="font-weight: 800; font-size: 1.1rem; color: #64748b; margin-bottom: 4px;">No Members Found</div>
-                  <div style="font-size: 0.9rem; color: #94a3b8;">Try a different search term or add a new record.</div>
-               </td>
-            </tr>
-          </tbody>
-        </table>
+                <div style="font-weight: 800; font-size: 0.9rem;">{{ m.name }}</div>
+              </div>
+              <span class="badge" [ngClass]="m.status === 'Active' ? 'badge-active' : 'badge-inactive'">{{ m.status }}</span>
+            </div>
+            <div style="font-size: 0.8rem; display: flex; flex-direction: column; gap: 4px; color: var(--text-muted);">
+               <div>📱 {{ m.contactDetails }}</div>
+               <div>🏰 {{ m.sabhaName }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="filteredMembers.length === 0 && !isLoading" style="text-align: center; padding: 64px 0; opacity: 0.5;">
+          <div style="font-size: 3rem; margin-bottom: 12px;">📂</div>
+          <div style="font-weight: 700;">No Registry Matches Found</div>
+        </div>
       </div>
 
-      <!-- Bulk Actions Bar -->
-      <div *ngIf="selectedMemberIds.size > 0" class="bulk-action-bar animate-fade-in">
-         <div style="display: flex; align-items: center; gap: 20px;">
-            <div style="font-weight: 800; font-size: 1rem; color: white;">⚡ {{ selectedMemberIds.size }} items selected</div>
-            <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.2);"></div>
-            <div style="display: flex; gap: 12px;">
-               <button (click)="bulkUpdateStatus('Active')" class="btn" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); font-size: 0.85rem;">Mark Active</button>
-               <button (click)="bulkUpdateStatus('Inactive')" class="btn" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); font-size: 0.85rem;">Mark Inactive</button>
-               <button (click)="bulkDelete()" class="btn" style="background: rgba(239, 68, 68, 0.4); color: white; border: 1px solid rgba(239, 68, 68, 0.4); font-size: 0.85rem;">Delete Permanent</button>
-            </div>
-         </div>
-         <button (click)="selectedMemberIds.clear()" class="btn" style="color: white; font-weight: 600; font-size: 0.85rem;">Dismiss</button>
+      <!-- Bulk Actions Footbar -->
+      <div *ngIf="selectedMemberIds.size > 0" class="animate-slide-up" style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--bg-sidebar); padding: 12px 24px; border-radius: 99px; display: flex; align-items: center; gap: 24px; z-index: 1000; box-shadow: var(--shadow-md); color: white;">
+          <div style="font-weight: 700;">{{ selectedMemberIds.size }} items selected</div>
+          <div style="display: flex; gap: 8px;">
+            <button (click)="bulkUpdateStatus('Active')" class="btn" style="background: rgba(255,255,255,0.1); color: white; padding: 6px 12px; font-size: 0.75rem;">Mark Active</button>
+            <button (click)="bulkUpdateStatus('Inactive')" class="btn" style="background: rgba(255,255,255,0.1); color: white; padding: 6px 12px; font-size: 0.75rem;">Mark Inactive</button>
+            <button (click)="bulkDelete()" class="btn" style="background: var(--danger); color: white; padding: 6px 12px; font-size: 0.75rem;">Delete</button>
+          </div>
+          <button (click)="selectedMemberIds.clear()" style="background: transparent; border: none; color: white; cursor: pointer; font-size: 1.2rem; padding: 0 8px;">✕</button>
       </div>
+
     </div>
+
   `
 })
 export class MemberManagementComponent implements OnInit {
@@ -207,9 +225,9 @@ export class MemberManagementComponent implements OnInit {
 
   memberForm: FormGroup = this.fb.group({
     name: ['', Validators.required],
-    contactDetails: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
-    emailId: [''],
-    photo: [''],
+    contactDetails: ['', [Validators.required, Validators.pattern('^[0-9]{7,15}$')]],
+    emailId: ['', [Validators.required, Validators.email]],
+    photo: ['', Validators.required],
     address: ['', Validators.required],
     role: ['Regular Member', Validators.required],
     sabhaName: ['', Validators.required],
@@ -292,7 +310,7 @@ export class MemberManagementComponent implements OnInit {
 
   editMember(m: Member) {
     this.showForm = true;
-    this.editingId = m.id;
+    this.editingId = m.id || null;
     this.memberForm.patchValue({
       name: m.name,
       contactDetails: m.contactDetails,
@@ -344,6 +362,7 @@ export class MemberManagementComponent implements OnInit {
           return;
         }
 
+        alert(this.editingId ? 'Member record updated successfully! ✨' : 'New member registered successfully! ✨');
         await this.loadMembers();
         this.toggleForm();
       } catch (err) {

@@ -3,19 +3,19 @@
       <!-- Mobile Header Button -->
       <div class="mobile-header" *ngIf="(auth.currentUser$ | async) as user; else noNav">
         <ng-container *ngIf="!isLoginPage">
-          <div style="font-size: 1.2rem; font-weight: 800; color: white;">Sabha <span style="color: var(--primary);">Connect</span></div>
-          <button class="menu-toggle-btn" (click)="toggleMobileMenu()" aria-label="Toggle Menu">
+          <div style="font-size: 1.2rem; font-weight: 800; color: var(--text-dark);">SABHA <span style="color: var(--primary);">CONNECT</span></div>
+          <button class="menu-toggle-btn" (click)="toggleMobileMenu()" aria-label="Toggle Menu" style="color: var(--text-dark);">
             {{ isMobileMenuOpen ? '✕' : '☰' }}
           </button>
         </ng-container>
       </div>
 
       <!-- Sidebar -->
-      <aside class="sidebar" [class.sidebar-open]="isMobileMenuOpen" *ngIf="(auth.currentUser$ | async) as user">
-        <ng-container *ngIf="!isLoginPage">
-        <div class="sidebar-header">
-           <div style="font-size: 2.5rem; margin-bottom: 8px; filter: drop-shadow(0 0 12px var(--primary));">🌌</div>
-           <div style="font-size: 1.4rem; font-weight: 800; letter-spacing: -0.025em; color: white;">Sabha <span style="color: var(--primary);">Connect</span></div>
+      <aside class="sidebar" [class.sidebar-open]="isMobileMenuOpen" *ngIf="!isLoginPage && (auth.currentUser$ | async) as user">
+        <div style="padding: 32px 24px; text-align: center;">
+            <div style="font-size: 2.5rem; margin-bottom: 12px; filter: drop-shadow(0 0 12px var(--primary));">🌌</div>
+            <div style="font-size: 1.2rem; font-weight: 800; letter-spacing: -0.05em; color: white;">SABHA <span style="color: var(--primary);">CONNECT</span></div>
+            <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.2em;">Intelligence Center</div>
         </div>
         
         <nav style="padding-top: 24px;">
@@ -56,7 +56,6 @@
               🔒 Log Out
            </a>
         </div>
-        </ng-container>
       </aside>
 
       <!-- Global Search Modal -->

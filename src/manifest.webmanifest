@@ -1,8 +1,8 @@
 {
-  "name": "sabha-frontend",
-  "short_name": "sabha-frontend",
-  "theme_color": "#1976d2",
-  "background_color": "#fafafa",
+  "name": "Sabha Connect",
+  "short_name": "Sabha",
+  "theme_color": "#F87941",
+  "background_color": "#FDFCFC",
   "display": "standalone",
   "scope": "./",
   "start_url": "./",
