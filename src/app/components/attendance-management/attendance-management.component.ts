@@ -91,7 +91,7 @@ interface AttendanceRecord {
                 <span *ngIf="!record.status" style="color: var(--text-muted); background: var(--bg-sidebar-hover); padding: 8px 14px; border-radius: 10px; font-size: 0.75rem; font-weight: 800; border: 1px solid var(--border-color); letter-spacing: 0.05em;">UNMARKED</span>
               </td>
               <td style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">
-                <span *ngIf="record.timestamp">🕒 {{ (record.timestamp | date:'h:mm:ss a':'UTC') | lowercase }}</span>
+                <span *ngIf="record.timestamp">🕒 {{ (record.timestamp | date:'h:mm:ss a') | lowercase }}</span>
                 <span *ngIf="!record.timestamp">--:--</span>
               </td>
               <td>
@@ -125,7 +125,7 @@ interface AttendanceRecord {
                   <div style="font-size: 0.7rem; color: var(--text-muted);">{{ record.role }}</div>
                 </div>
               </div>
-              <span *ngIf="record.timestamp" style="font-size: 0.65rem; color: var(--text-muted);">🕒 {{ (record.timestamp | date:'h:mm:ss a':'UTC') | lowercase }}</span>
+              <span *ngIf="record.timestamp" style="font-size: 0.65rem; color: var(--text-muted);">🕒 {{ (record.timestamp | date:'h:mm:ss a') | lowercase }}</span>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px;">
@@ -233,7 +233,8 @@ export class AttendanceManagementComponent implements OnInit {
     await this.loadSabhas();
     if (this.sabhas.length > 0) {
       this.selectedSabhaId = this.sabhas[0].id;
-      this.selectedDate = new Date().toISOString().split('T')[0]; // Default to today
+      const now = new Date();
+      this.selectedDate = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
       this.onSabhaChange();
     }
   }
@@ -268,7 +269,8 @@ export class AttendanceManagementComponent implements OnInit {
            // Case-insensitive flexible matching for Sabha division
            const memberSabha = (m.sabha_name || '').toLowerCase();
            const currentSabha = sabhaTitle.toLowerCase();
-           return m.status === 'Active' && 
+           const memberStatus = (m.status || '').toLowerCase();
+           return memberStatus === 'active' && 
                   (memberSabha === currentSabha || currentSabha.includes(memberSabha) || !m.sabha_name);
         })
         .map((m: any) => {
@@ -279,7 +281,8 @@ export class AttendanceManagementComponent implements OnInit {
             role: m.role,
             memberStatus: m.status,
             status: att ? att.status : null,
-            timestamp: att ? new Date(att.time_marked) : null
+            // Strip timezone info to keep "Visual Sync" (local digits) stable
+            timestamp: att ? new Date(att.time_marked.replace(/Z|[-+]\d{2}(:?\d{2})?$/, '')) : null
           };
         });
     } catch (e) {
@@ -298,7 +301,7 @@ export class AttendanceManagementComponent implements OnInit {
     record.timestamp = new Date();
     
     try {
-      // Direct real-time save to Supabase
+      // Direct real-time save using 'Visual Sync' (local digits + Z) to show IST in Supabase UI
       const pad = (n: number) => n.toString().padStart(2, '0');
       const now = record.timestamp;
       const visualSyncString = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T` +
@@ -336,6 +339,7 @@ export class AttendanceManagementComponent implements OnInit {
         .map(record => {
           const now = record.timestamp || new Date();
           const pad = (n: number) => n.toString().padStart(2, '0');
+          // Visual Sync: Local digits saved as UTC so Supabase UI shows IST digits
           const visualSyncString = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T` +
                            `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}Z`;
 
