@@ -22,7 +22,7 @@ interface AttendanceRecord {
       <div *ngIf="isLoading && attendanceList.length === 0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--glass-bg); display: flex; align-items: center; justify-content: center; z-index: 10; border-radius: var(--radius-lg); backdrop-filter: blur(4px);">
         <div class="skeleton" style="width: 80%; height: 80%;"></div>
       </div>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 20px;">
+      <div class="page-header" style="margin-bottom: 32px; gap: 20px;">
          <div>
             <h2 class="card-title" style="margin-bottom: 4px;">📝 Attendance Tracking</h2>
             <p style="color: var(--text-muted); font-size: 0.85rem; font-weight: 500;">Record and manage presence for scheduled meetings.</p>

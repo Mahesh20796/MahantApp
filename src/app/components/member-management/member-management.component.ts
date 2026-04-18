@@ -10,12 +10,12 @@ import { Member } from '../../models/member.model';
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
   template: `
     <div class="card animate-fade-in" style="margin-bottom: 32px;">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+      <div class="page-header">
         <div>
           <h2 class="card-title" style="margin: 0;">👥 Member Registry</h2>
           <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Search, register, and manage organization members.</p>
         </div>
-        <button class="btn" [ngClass]="showForm ? 'btn-danger' : 'btn-primary'" (click)="toggleForm()">
+        <button class="btn" [ngClass]="showForm ? 'btn-danger' : 'btn-primary'" (click)="toggleForm()" style="justify-content: center;">
           {{ showForm ? '✕ Close Portal' : '+ New Registration' }}
         </button>
       </div>
@@ -24,8 +24,8 @@ import { Member } from '../../models/member.model';
       <div *ngIf="showForm" style="margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--border-color);">
         <form [formGroup]="memberForm" (ngSubmit)="onSubmit()">
           <!-- Photo & Basic Identity -->
-          <div style="display: grid; grid-template-columns: 120px 1fr 1fr; gap: 32px; margin-bottom: 32px;">
-            <div (click)="photoInput.click()" style="width: 120px; height: 120px; border-radius: 12px; background: var(--bg-main); border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden;">
+          <div class="responsive-grid" style="grid-template-columns: 120px 1fr 1fr; gap: 32px; margin-bottom: 32px;">
+            <div (click)="photoInput.click()" style="width: 120px; height: 120px; border-radius: 12px; background: var(--bg-main); border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; margin: 0 auto;">
               <img *ngIf="memberForm.get('photo')?.value" [src]="memberForm.get('photo')?.value" style="width: 100%; height: 100%; object-fit: cover;">
               <div *ngIf="!memberForm.get('photo')?.value" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
                 <span style="font-size: 2rem; opacity: 0.3;">📸</span>
@@ -63,7 +63,7 @@ import { Member } from '../../models/member.model';
           </div>
 
           <!-- Extended Information -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+          <div class="responsive-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 32px;">
              <div class="form-group">
                 <label class="form-label">Residential Address *</label>
                 <input type="text" class="form-control" formControlName="address" placeholder="Full address details">

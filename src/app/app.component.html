@@ -10,6 +10,9 @@
         </ng-container>
       </div>
 
+      <!-- Sidebar Backdrop -->
+      <div class="sidebar-backdrop" *ngIf="isMobileMenuOpen" (click)="closeMobileMenu()"></div>
+
       <!-- Sidebar -->
       <aside class="sidebar" [class.sidebar-open]="isMobileMenuOpen" *ngIf="!isLoginPage && (auth.currentUser$ | async) as user">
         <div style="padding: 32px 24px; text-align: center;">

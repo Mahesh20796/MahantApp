@@ -200,4 +200,145 @@ export class SupabaseService {
     if (error) throw error;
     return data;
   }
+
+  // ------------------------------------
+  // WALLET & TRANSACTIONS METHODS
+  // ------------------------------------
+  async getWalletTransactions() {
+    if (this.isMockMode) {
+      return [
+        { id: 'T1', date: new Date(), description: 'Monthly Subscription', reference: 'Bhavin Patel', category: 'Monthly Collection', amount: 100, type: 'deposit', status: 'COMPLETED' },
+        { id: 'T2', date: new Date(), description: 'Admin Withdrawal', reference: 'General Expense', category: 'Maintenance', amount: 500, type: 'withdrawal', status: 'COMPLETED' }
+      ];
+    }
+    const { data, error } = await this.supabase
+      .from('wallet_transactions')
+      .select(`
+        *,
+        members (name)
+      `)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return data.map(t => ({
+      ...t,
+      date: t.created_at,
+      reference: t.members?.name || t.reference || 'N/A'
+    }));
+  }
+
+  async addTransaction(transaction: any) {
+    if (this.isMockMode) {
+      console.log('📝 Mock: Adding transaction', transaction);
+      return { error: null };
+    }
+
+    const { data, error } = await this.supabase
+      .from('wallet_transactions')
+      .insert([transaction])
+      .select();
+
+    if (error) throw error;
+
+    if (transaction.member_id) {
+      const amountChange = transaction.type === 'deposit' ? transaction.amount : -transaction.amount;
+      await this.updateMemberBalance(transaction.member_id, amountChange);
+    }
+
+    return data;
+  }
+
+  async updateMemberBalance(memberId: string, amountChange: number) {
+    if (this.isMockMode) {
+      const member = this.mockMembers.find(m => m.id === memberId);
+      if (member) {
+        (member as any).wallet_balance = ((member as any).wallet_balance || 0) + amountChange;
+      }
+      return;
+    }
+
+    const { data: member, error: fetchError } = await this.supabase
+      .from('members')
+      .select('wallet_balance')
+      .eq('id', memberId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const newBalance = (member.wallet_balance || 0) + amountChange;
+
+    const { error: updateError } = await this.supabase
+      .from('members')
+      .update({ wallet_balance: newBalance })
+      .eq('id', memberId);
+
+    if (updateError) throw updateError;
+  }
+
+  async processMonthlyCollection(amount: number = 100) {
+    if (this.isMockMode) {
+      console.log(`📝 Mock: Collecting ₹${amount} from all members`);
+      this.mockMembers.forEach(m => {
+        (m as any).wallet_balance = ((m as any).wallet_balance || 0) + amount;
+      });
+      return { success: true };
+    }
+
+    const members = await this.getMembers();
+    const transactions = members.filter(m => m.status === 'Active').map(m => ({
+      member_id: m.id,
+      amount: amount,
+      type: 'deposit',
+      category: 'MONTHLY_COLLECTION',
+      description: `Monthly Collection - ${new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}`,
+      status: 'COMPLETED'
+    }));
+
+    const { error: txError } = await this.supabase
+      .from('wallet_transactions')
+      .insert(transactions);
+    
+    if (txError) throw txError;
+
+    for (const member of members.filter(m => m.status === 'Active')) {
+      await this.updateMemberBalance(member.id, amount);
+    }
+
+    return { success: true, count: transactions.length };
+  }
+
+  async getOrganizationStats() {
+    if (this.isMockMode) {
+      return {
+        totalBalance: 125000,
+        pendingCollections: 12450,
+        memberCount: this.mockMembers.length
+      };
+    }
+
+    // 1. Get transactions to calculate actual balance
+    const { data: transactions, error: tError } = await this.supabase
+      .from('wallet_transactions')
+      .select('amount, type');
+    
+    if (tError) throw tError;
+
+    const totalBalance = (transactions || []).reduce((sum, t) => {
+      return t.type === 'deposit' ? sum + Number(t.amount) : sum - Number(t.amount);
+    }, 0);
+
+    // 2. Get member count
+    const { count, error: cError } = await this.supabase
+      .from('members')
+      .select('*', { count: 'exact', head: true });
+
+    if (cError) throw cError;
+    
+    return {
+      totalBalance,
+      pendingCollections: 0,
+      memberCount: count || 0
+    };
+  }
 }
