@@ -22,16 +22,16 @@ interface AttendanceRecord {
       <div *ngIf="isLoading && attendanceList.length === 0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--glass-bg); display: flex; align-items: center; justify-content: center; z-index: 10; border-radius: var(--radius-lg); backdrop-filter: blur(4px);">
         <div class="skeleton" style="width: 80%; height: 80%;"></div>
       </div>
-      <div class="page-header" style="margin-bottom: 32px; gap: 20px;">
+      <div class="page-header" style="margin-bottom: 24px; gap: 16px;">
          <div>
-            <h2 class="card-title" style="margin-bottom: 4px;">📝 Attendance Tracking</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; font-weight: 500;">Record and manage presence for scheduled meetings.</p>
+            <h2 class="card-title" style="margin-bottom: 4px; font-size: 1.25rem;">📝 Attendance</h2>
+            <p style="color: var(--text-muted); font-size: 0.8rem; font-weight: 500;">Registry tracking session active.</p>
          </div>
-         <div style="text-align: right;">
-            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Current Session Date</div>
-            <div style="font-size: 1.25rem; font-weight: 800; color: var(--primary);">{{ selectedDate | date:'fullDate' }}</div>
-            <div *ngIf="unmarkedCount > 0" style="font-size: 0.7rem; color: var(--warning); font-weight: 700;">⚠️ {{ unmarkedCount }} members remaining</div>
-            <div *ngIf="unmarkedCount === 0 && attendanceList.length > 0" style="font-size: 0.7rem; color: var(--success); font-weight: 700;">✅ Everyone marked</div>
+         <div style="background: var(--primary-soft); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(248, 121, 65, 0.2); flex: 1; min-width: 150px;">
+            <div style="font-size: 0.65rem; color: var(--primary); font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Session Date</div>
+            <div style="font-size: 1rem; font-weight: 800; color: var(--text-dark);">{{ selectedDate | date:'mediumDate' }}</div>
+            <div *ngIf="unmarkedCount > 0" style="font-size: 0.65rem; color: var(--warning); font-weight: 700; margin-top: 4px;">● {{ unmarkedCount }} members remaining</div>
+            <div *ngIf="unmarkedCount === 0 && attendanceList.length > 0" style="font-size: 0.65rem; color: var(--success); font-weight: 700; margin-top: 4px;">● Everyone marked</div>
          </div>
       </div>
       
@@ -128,24 +128,24 @@ interface AttendanceRecord {
               <span *ngIf="record.timestamp" style="font-size: 0.65rem; color: var(--text-muted);">🕒 {{ (record.timestamp | date:'h:mm:ss a') | lowercase }}</span>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px;">
               <button class="btn" (click)="mark(record, 'P')" 
-                      [style.background]="record.status === 'P' ? 'var(--success)' : 'var(--bg-sidebar-hover)'" 
-                      [style.color]="record.status === 'P' ? 'white' : 'var(--text-muted)'"
-                      style="justify-content: center; padding: 12px; border: 1px solid var(--border-color); font-weight: 800;">
-                PRESENT
+                      [style.background]="record.status === 'P' ? 'var(--success)' : 'var(--bg-card)'" 
+                      [style.color]="record.status === 'P' ? 'white' : 'var(--text-dark)'"
+                      style="justify-content: center; padding: 14px 8px; border: 1px solid var(--border-color); font-weight: 800; border-radius: 12px; font-size: 0.75rem; box-shadow: var(--shadow-sm);">
+                {{ record.status === 'P' ? 'PRESENT ✅' : 'PRESENT' }}
               </button>
               <button class="btn" (click)="mark(record, 'A')" 
-                      [style.background]="record.status === 'A' ? 'var(--danger)' : 'var(--bg-sidebar-hover)'" 
-                      [style.color]="record.status === 'A' ? 'white' : 'var(--text-muted)'"
-                      style="justify-content: center; padding: 12px; border: 1px solid var(--border-color); font-weight: 800;">
-                ABSENT
+                      [style.background]="record.status === 'A' ? 'var(--danger)' : 'var(--bg-card)'" 
+                      [style.color]="record.status === 'A' ? 'white' : 'var(--text-dark)'"
+                      style="justify-content: center; padding: 14px 8px; border: 1px solid var(--border-color); font-weight: 800; border-radius: 12px; font-size: 0.75rem; box-shadow: var(--shadow-sm);">
+                {{ record.status === 'A' ? 'ABSENT ❌' : 'ABSENT' }}
               </button>
               <button class="btn" (click)="mark(record, 'L')" 
-                      [style.background]="record.status === 'L' ? 'var(--warning)' : 'var(--bg-sidebar-hover)'" 
-                      [style.color]="record.status === 'L' ? 'white' : 'var(--text-muted)'"
-                      style="justify-content: center; padding: 12px; border: 1px solid var(--border-color); font-weight: 800;">
-                LEAVE
+                      [style.background]="record.status === 'L' ? 'var(--warning)' : 'var(--bg-card)'" 
+                      [style.color]="record.status === 'L' ? 'white' : 'var(--text-dark)'"
+                      style="justify-content: center; padding: 14px 8px; border: 1px solid var(--border-color); font-weight: 800; border-radius: 12px; font-size: 0.75rem; box-shadow: var(--shadow-sm);">
+                {{ record.status === 'L' ? 'LEAVE 🏠' : 'LEAVE' }}
               </button>
             </div>
           </div>
@@ -160,13 +160,13 @@ interface AttendanceRecord {
       <!-- Footer Actions -->
       <div style="margin-top: auto; padding-top: 32px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
          <!-- Pagination -->
-         <div style="display: flex; gap: 10px; align-items: center;">
+         <div style="display: flex; gap: 10px; align-items: center; width: 100%; justify-content: center;">
             <button class="btn" style="background: var(--bg-sidebar-hover); border: 1px solid var(--border-color); padding: 12px; border-radius: 14px; color: var(--text-dark);" [disabled]="currentPage === 1" (click)="previousPage()">←</button>
             <span style="font-size: 0.9rem; font-weight: 800; color: var(--text-muted); padding: 0 16px;">P. {{ currentPage }} / {{ totalPages || 1 }}</span>
             <button class="btn" style="background: var(--bg-sidebar-hover); border: 1px solid var(--border-color); padding: 12px; border-radius: 14px; color: var(--text-dark);" [disabled]="currentPage === totalPages" (click)="nextPage()">→</button>
          </div>
 
-         <button class="btn" (click)="saveAttendance()" [disabled]="!isAnyMarked || isLoading" 
+         <button class="btn hide-on-mobile" (click)="saveAttendance()" [disabled]="!isAnyMarked || isLoading" 
                  [style.background]="isAnyMarked ? 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)' : 'var(--bg-sidebar-hover)'"
                  style="height: 56px; padding: 0 48px; border-radius: var(--radius-md); color: white; font-weight: 800; font-size: 1rem; border: none; box-shadow: var(--shadow-premium);">
            💾 Commit Attendance Records

@@ -161,20 +161,24 @@ import { Member } from '../../models/member.model';
 
         <!-- Mobile View (Institutional Cards) -->
         <div class="show-on-mobile mobile-card-list">
-          <div *ngFor="let m of filteredMembers" class="card" style="padding: 16px; margin-bottom: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div *ngFor="let m of filteredMembers" class="mobile-card">
+            <div class="mobile-card-header">
               <div style="display: flex; gap: 12px; align-items: center;">
-                <div style="width: 40px; height: 40px; border-radius: 8px; background: var(--bg-main); display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--bg-main); display:flex; align-items:center; justify-content:center; overflow:hidden; border: 1px solid var(--border-color);">
                     <img *ngIf="m.photo" [src]="m.photo" style="width: 100%; height: 100%; object-fit: cover;">
                     <span *ngIf="!m.photo" style="font-weight: 700; color: var(--primary);">{{ m.name.charAt(0) }}</span>
                 </div>
-                <div style="font-weight: 800; font-size: 0.9rem;">{{ m.name }}</div>
+                <div style="font-weight: 800; font-size: 1rem; color: var(--text-dark);">{{ m.name }}</div>
               </div>
               <span class="badge" [ngClass]="m.status === 'Active' ? 'badge-active' : 'badge-inactive'">{{ m.status }}</span>
             </div>
-            <div style="font-size: 0.8rem; display: flex; flex-direction: column; gap: 4px; color: var(--text-muted);">
+            <div style="font-size: 0.85rem; display: flex; flex-direction: column; gap: 6px; color: var(--text-muted); font-weight: 500;">
                <div>📱 {{ m.contactDetails }}</div>
                <div>🏰 {{ m.sabhaName }}</div>
+            </div>
+            <div style="margin-top: 16px; pt-16; border-top: 1px solid var(--border-color); display: flex; gap: 12px; padding-top: 16px;">
+               <button class="btn" style="flex: 1; justify-content: center; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-dark);" (click)="editMember(m)">Edit</button>
+               <button class="btn btn-danger" style="flex: 1; justify-content: center;" (click)="deleteMember(m.id!)">Delete</button>
             </div>
           </div>
         </div>
