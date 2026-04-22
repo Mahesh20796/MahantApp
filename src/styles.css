@@ -1,10 +1,10 @@
 :root {
   /* Institutional Palette - High Contrast */
-  --primary: #F87941;
-  --primary-hover: #E6612A;
-  --primary-soft: rgba(248, 121, 65, 0.08);
-  --primary-active: #D45524;
-  --accent: #F9B095;
+  --primary: #1e3a8a;
+  --primary-hover: #1e40af;
+  --primary-soft: rgba(30, 58, 138, 0.08);
+  --primary-active: #172554;
+  --accent: #ca8a04;
   --success: #10B981;
   --danger: #EF4444;
   --warning: #F59E0B;

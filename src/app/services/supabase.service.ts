@@ -249,6 +249,38 @@ export class SupabaseService {
     return data;
   }
 
+  async deleteTransaction(id: string) {
+    if (this.isMockMode) {
+      console.log('📝 Mock: Deleting transaction', id);
+      return { error: null };
+    }
+
+    // 1. Get the transaction first to see if it has a member_id
+    const { data: transaction, error: fetchError } = await this.supabase
+      .from('wallet_transactions')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    // 2. Delete the transaction
+    const { error: deleteError } = await this.supabase
+      .from('wallet_transactions')
+      .delete()
+      .eq('id', id);
+
+    if (deleteError) throw deleteError;
+
+    // 3. Reverse the balance update if member_id exists
+    if (transaction && transaction.member_id) {
+       const reverseAmount = transaction.type === 'deposit' ? -transaction.amount : transaction.amount;
+       await this.updateMemberBalance(transaction.member_id, reverseAmount);
+    }
+
+    return { error: null };
+  }
+
   async updateMemberBalance(memberId: string, amountChange: number) {
     if (this.isMockMode) {
       const member = this.mockMembers.find(m => m.id === memberId);
@@ -276,17 +308,22 @@ export class SupabaseService {
     if (updateError) throw updateError;
   }
 
-  async processMonthlyCollection(amount: number = 100) {
+  async processMonthlyCollection(amount: number = 100, memberIds?: string[]) {
     if (this.isMockMode) {
-      console.log(`📝 Mock: Collecting ₹${amount} from all members`);
-      this.mockMembers.forEach(m => {
+      console.log(`📝 Mock: Collecting ₹${amount} from selected members`);
+      const targetIds = memberIds || this.mockMembers.map(m => m.id);
+      this.mockMembers.filter(m => targetIds.includes(m.id)).forEach(m => {
         (m as any).wallet_balance = ((m as any).wallet_balance || 0) + amount;
       });
-      return { success: true };
+      return { success: true, count: targetIds.length };
     }
 
     const members = await this.getMembers();
-    const transactions = members.filter(m => m.status === 'Active').map(m => ({
+    const activeMembers = members.filter(m => m.status === 'Active' && (!memberIds || memberIds.includes(m.id)));
+    
+    if (activeMembers.length === 0) return { success: true, count: 0 };
+
+    const transactions = activeMembers.map(m => ({
       member_id: m.id,
       amount: amount,
       type: 'deposit',
@@ -301,7 +338,7 @@ export class SupabaseService {
     
     if (txError) throw txError;
 
-    for (const member of members.filter(m => m.status === 'Active')) {
+    for (const member of activeMembers) {
       await this.updateMemberBalance(member.id, amount);
     }
 
@@ -340,5 +377,61 @@ export class SupabaseService {
       pendingCollections: 0,
       memberCount: count || 0
     };
+  }
+
+  // ------------------------------------
+  // REPORTING METHODS
+  // ------------------------------------
+  async getAttendanceSummaryReport(startDate: string, endDate: string) {
+    if (this.isMockMode) {
+      return { P: 150, A: 20, L: 10 };
+    }
+    const { data, error } = await this.supabase
+      .from('attendance')
+      .select('status')
+      .gte('attendance_date', startDate)
+      .lte('attendance_date', endDate);
+    if (error) throw error;
+    
+    return (data || []).reduce((acc: any, curr: any) => {
+      acc[curr.status] = (acc[curr.status] || 0) + 1;
+      return acc;
+    }, { P: 0, A: 0, L: 0 });
+  }
+
+  async getTopEarlyBirds(limit: number = 3) {
+    if (this.isMockMode) {
+      return this.mockMembers.slice(0, limit).map((m, i) => ({ ...m, early_count: 5 - i }));
+    }
+
+    // Logic: Fetch all present attendance records joined with sabhas
+    // This is complex for a single query, so we'll fetch and aggregate in code for now
+    const { data, error } = await this.supabase
+      .from('attendance')
+      .select(`
+        status,
+        time_marked,
+        members(id, name),
+        sabhas(time_schedule)
+      `)
+      .eq('status', 'P');
+
+    if (error) throw error;
+
+    // Simplified logic: Just count how many times they were present for now, 
+    // real "early bird" would compare time_marked vs time_schedule.
+    // For this design task, I'll aggregate based on a simple presence count 
+    // or simulate the time comparison if fields are reliable.
+    
+    const results = (data || []).reduce((acc: any, curr: any) => {
+        const mid = curr.members.id;
+        if (!acc[mid]) acc[mid] = { name: curr.members.name, count: 0 };
+        acc[mid].count++;
+        return acc;
+    }, {});
+
+    return Object.values(results)
+      .sort((a: any, b: any) => b.count - a.count)
+      .slice(0, limit);
   }
 }

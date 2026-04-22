@@ -15,11 +15,11 @@ import { Router } from '@angular/router';
       <div class="login-container animate-slide-up">
         <div class="glass-login-box">
           <div class="login-header">
-            <div class="logo-circle">
-               <span class="logo-emoji">🌌</span>
+            <div class="logo-circle" style="overflow: hidden; padding: 0;">
+               <img src="assets/logo.png" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
-            <h1 class="login-title">Sabha<span class="accent-text">Connect</span></h1>
-            <p class="login-subtitle">Administrative Intelligence Center gateway</p>
+            <h1 class="login-title">Rana Mandal <span class="accent-text">Sabha</span></h1>
+            <p class="login-subtitle">Official Administrative Intelligence Portal</p>
           </div>
           
           <form (ngSubmit)="onLogin()" class="login-form">
@@ -63,7 +63,7 @@ import { Router } from '@angular/router';
     </div>
   `,
   styles: [`
-    :host { --login-accent: #F87941; }
+    :host { --login-accent: #1e3a8a; }
 
     .login-wrapper {
       position: fixed;
@@ -122,12 +122,12 @@ import { Router } from '@angular/router';
       height: 80px;
       background: linear-gradient(135deg, rgba(248, 121, 65, 0.1), rgba(248, 121, 65, 0.02));
       border: 1px solid rgba(248, 121, 65, 0.2);
-      border-radius: 24px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       margin: 0 auto 24px;
-      box-shadow: 0 10px 40px -10px rgba(248, 121, 65, 0.3);
+      box-shadow: 0 10px 40px -10px rgba(30, 58, 138, 0.3);
     }
 
     .logo-emoji {
@@ -199,7 +199,7 @@ import { Router } from '@angular/router';
       outline: none;
       background: rgba(255, 255, 255, 0.05);
       border-color: var(--login-accent);
-      box-shadow: 0 0 0 4px rgba(248, 121, 65, 0.1);
+      box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1);
     }
 
     .login-error {
@@ -222,19 +222,19 @@ import { Router } from '@angular/router';
       margin-top: 32px;
       border: none;
       border-radius: 18px;
-      background: linear-gradient(135deg, #F87941 0%, #E6612A 100%);
+      background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
       color: white;
       font-weight: 800;
       font-size: 1.1rem;
       letter-spacing: -0.01em;
       cursor: pointer;
       transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 16px 32px -8px rgba(248, 121, 65, 0.4);
+      box-shadow: 0 16px 32px -8px rgba(30, 58, 138, 0.4);
     }
 
     .submit-button:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 24px 48px -12px rgba(248, 121, 65, 0.5);
+      box-shadow: 0 24px 48px -12px rgba(30, 58, 138, 0.5);
       filter: brightness(1.1);
     }
 

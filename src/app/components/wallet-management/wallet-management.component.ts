@@ -14,10 +14,10 @@ import { SupabaseService } from '../../services/supabase.service';
           <h1 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -0.04em; margin-bottom: 8px;">💳 Wallet & Financials</h1>
           <p style="color: var(--text-muted); font-size: 1.05rem; font-weight: 500;">Manage organization funds and member wallet transactions.</p>
         </div>
-        <button class="btn btn-primary" (click)="collectMonthlyFees()" [disabled]="processing" style="padding: 12px 24px; box-shadow: var(--shadow-md); justify-content: center;">
-          <span *ngIf="!processing">📅 Collect Monthly ₹100</span>
-          <span *ngIf="processing">⌛ Processing...</span>
-        </button>
+        <div style="display: flex; gap: 12px;">
+           <button class="btn btn-success" (click)="openForm('deposit')" style="padding: 12px 20px; font-weight: 800; justify-content: center;">+ Deposit</button>
+           <button class="btn btn-danger" (click)="openForm('withdrawal')" style="padding: 12px 20px; font-weight: 800; justify-content: center;">- Withdrawal</button>
+        </div>
       </div>
     </div>
 
@@ -40,6 +40,8 @@ import { SupabaseService } from '../../services/supabase.service';
         </div>
       </div>
     </div>
+
+
 
     <!-- Transaction Form -->
     <div *ngIf="showTransactionForm" class="card animate-fade-in" style="margin-top: 24px; border: 2px solid var(--primary); background: var(--bg-card); box-shadow: var(--shadow-premium);">
@@ -93,10 +95,7 @@ import { SupabaseService } from '../../services/supabase.service';
             Real-time audited log of all financial movements.
            </p>
         </div>
-        <div style="display: flex; gap: 12px;">
-          <button class="btn btn-success" (click)="openForm('deposit')" style="padding: 12px 20px; font-weight: 800; flex: 1; justify-content: center;">+ Deposit</button>
-          <button class="btn btn-danger" (click)="openForm('withdrawal')" style="padding: 12px 20px; font-weight: 800; flex: 1; justify-content: center;">- Withdrawal</button>
-        </div>
+
       </div>
 
       <div class="table-responsive hide-on-mobile" style="min-height: 200px;">
@@ -114,6 +113,7 @@ import { SupabaseService } from '../../services/supabase.service';
               <th>Classification</th>
               <th>Transaction Amount</th>
               <th style="text-align: right;">Status</th>
+              <th style="text-align: right;">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -138,6 +138,11 @@ import { SupabaseService } from '../../services/supabase.service';
                 {{ t.type === 'deposit' ? '+' : '-' }} ₹{{ t.amount | number:'1.1-1' }}
               </td>
               <td style="text-align: right;"><span class="badge badge-active">{{ t.status || 'COMPLETED' }}</span></td>
+              <td style="text-align: right;">
+                <button class="btn btn-danger" (click)="deleteTransaction(t.id)" [disabled]="processing" style="padding: 6px 12px; font-size: 0.7rem; border-radius: 6px;">
+                  🗑️
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -154,6 +159,8 @@ import { SupabaseService } from '../../services/supabase.service';
     .table-row-hover:hover { background: var(--primary-soft); transition: background 0.2s; }
     .form-control.is-invalid { border-color: var(--danger); }
     .invalid-feedback { color: var(--danger); font-size: 0.7rem; font-weight: 700; margin-top: 4px; }
+    
+
   `]
 })
 export class WalletManagementComponent implements OnInit {
@@ -200,21 +207,6 @@ export class WalletManagementComponent implements OnInit {
       console.error(e);
     } finally {
       this.loading = false;
-    }
-  }
-
-  async collectMonthlyFees() {
-    if (!confirm('Are you sure you want to collect ₹100 from all active members?')) return;
-    
-    try {
-      this.processing = true;
-      const result = await this.supabase.processMonthlyCollection(100);
-      alert(`Success! Collected fees from ${result.count} members.`);
-      await this.loadData();
-    } catch (e: any) {
-      alert('Error: ' + (e.message || e));
-    } finally {
-      this.processing = false;
     }
   }
 
@@ -275,6 +267,20 @@ export class WalletManagementComponent implements OnInit {
       await this.loadData();
     } catch (e: any) {
       alert('Error processing transaction: ' + (e.message || e));
+    } finally {
+      this.processing = false;
+    }
+  }
+
+  async deleteTransaction(id: string) {
+    if (!confirm('Are you sure you want to delete this transaction? This will also revert any associated member balance changes.')) return;
+    
+    try {
+      this.processing = true;
+      await this.supabase.deleteTransaction(id);
+      await this.loadData();
+    } catch (e: any) {
+      alert('Error deleting transaction: ' + (e.message || e));
     } finally {
       this.processing = false;
     }
