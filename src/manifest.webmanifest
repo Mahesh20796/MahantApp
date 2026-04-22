@@ -1,7 +1,7 @@
 {
-  "name": "Sabha Connect",
-  "short_name": "Sabha",
-  "theme_color": "#F87941",
+  "name": "Rana Mandal Sabha",
+  "short_name": "RMS Sabha",
+  "theme_color": "#1e3a8a",
   "background_color": "#FDFCFC",
   "display": "standalone",
   "scope": "./",
@@ -38,22 +38,16 @@
       "purpose": "maskable any"
     },
     {
-      "src": "assets/icons/icon-192x192.png",
+      "src": "assets/logo.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
-      "src": "assets/icons/icon-384x384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "assets/icons/icon-512x512.png",
+      "src": "assets/logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     }
   ]
 }
