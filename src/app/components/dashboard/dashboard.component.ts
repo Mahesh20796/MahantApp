@@ -231,11 +231,11 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           y: { 
             beginAtZero: true, 
             grid: { color: gridColor },
-            ticks: { color: textColor, font: { weight: '600' } }
+            ticks: { color: textColor, font: { weight: 600 } }
           },
           x: { 
             grid: { display: false },
-            ticks: { color: textColor, font: { weight: '600' } }
+            ticks: { color: textColor, font: { weight: 600 } }
           }
         }
       }
@@ -266,13 +266,13 @@ export class DashboardComponent implements OnInit, AfterViewInit {
             grid: { color: gridColor },
             ticks: { 
               color: textColor, 
-              font: { weight: '600' },
+              font: { weight: 600 },
               callback: (value) => '₹' + (Number(value) / 1000) + 'k'
             }
           },
           x: { 
             grid: { display: false },
-            ticks: { color: textColor, font: { weight: '600' } }
+            ticks: { color: textColor, font: { weight: 600 } }
           }
         }
       }
