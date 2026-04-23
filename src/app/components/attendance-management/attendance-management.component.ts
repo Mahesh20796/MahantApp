@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../services/supabase.service';
+import { AuthService } from '../../services/auth.service';
 
 interface AttendanceRecord {
   memberId: string;
@@ -154,7 +155,7 @@ interface AttendanceRecord {
 
       <div *ngIf="attendanceList.length === 0" style="text-align: center; padding: 60px 20px;">
         <div style="font-size: 3rem; opacity: 0.1; margin-bottom: 16px;">📋</div>
-        <div style="font-weight: 700; color: #94a3b8;">No members found for this configuration.</div>
+        <div style="font-weight: 700; color: var(--text-muted);">No members found for this configuration.</div>
       </div>
       
       <!-- Footer Actions -->
@@ -166,21 +167,43 @@ interface AttendanceRecord {
             <button class="btn" style="background: var(--bg-sidebar-hover); border: 1px solid var(--border-color); padding: 12px; border-radius: 14px; color: var(--text-dark);" [disabled]="currentPage === totalPages" (click)="nextPage()">→</button>
          </div>
 
-         <button class="btn hide-on-mobile" (click)="saveAttendance()" [disabled]="!isAnyMarked || isLoading" 
+         <button *ngIf="auth.hasPermission('attendance', 'create')" 
+                 class="btn hide-on-mobile" (click)="saveAttendance()" [disabled]="!isAnyMarked || isLoading" 
                  [style.background]="isAnyMarked ? 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)' : 'var(--bg-sidebar-hover)'"
                  style="height: 56px; padding: 0 48px; border-radius: var(--radius-md); color: white; font-weight: 800; font-size: 1rem; border: none; box-shadow: var(--shadow-premium);">
            💾 Commit Attendance Records
          </button>
       </div>
       <!-- Floating Action Button for Mobile Commit -->
-      <button class="fab show-on-mobile animate-fade-in" (click)="saveAttendance()" *ngIf="isAnyMarked" [disabled]="isLoading" aria-label="Commit Records Swapped">
+      <button class="fab show-on-mobile animate-fade-in" (click)="saveAttendance()" 
+              *ngIf="isAnyMarked && auth.hasPermission('attendance', 'create')" 
+              [disabled]="isLoading" aria-label="Commit Records Swapped">
         <span style="font-size: 1.5rem;">💾</span>
       </button>
     </div>
-  `
+  `,
+  styles: [`
+    .fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 64px;
+      height: 64px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      color: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 12px 32px rgba(248, 113, 113, 0.4);
+      z-index: 100;
+    }
+  `]
 })
 export class AttendanceManagementComponent implements OnInit {
   supabaseService = inject(SupabaseService);
+  auth = inject(AuthService);
   
   sabhas: any[] = [];
   selectedSabhaId: string = '';

@@ -8,6 +8,8 @@ import { FormsModule } from '@angular/forms';
 import { filter, Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { SwUpdate } from '@angular/service-worker';
 
+import { VoiceAssistantService } from './services/voice-assistant.service';
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -21,14 +23,33 @@ export class AppComponent implements OnInit {
   router = inject(Router);
   supabase = inject(SupabaseService);
   swUpdate = inject(SwUpdate);
+  voiceAssistant = inject(VoiceAssistantService);
   
   title = 'Sabha Management System';
+  
+  isVoiceActive = false;
+  currentTranscript = '';
+  isListening = false;
 
   isSearchOpen = false;
   searchQuery = '';
   searchResults: any[] = [];
   isMobileMenuOpen = false;
   isLoginPage = false;
+
+  navLinks = [
+    { path: '/dashboard', label: '📊 Dashboard', module: 'dashboard' },
+    { path: '/sabhas', label: '🗓️ Sabha History', module: 'sabha_history' },
+    { path: '/members', label: '👥 Member Registry', module: 'members' },
+    { path: '/roles', label: '🛡️ System Roles', module: 'roles' },
+    { path: '/attendance', label: '📝 Attendance', module: 'attendance' },
+    { path: '/wallet', label: '💳 Financials', module: 'financials' },
+    { path: '/reports', label: '📈 Reports', module: 'reports' }
+  ];
+
+  get filteredNavLinks() {
+    return this.navLinks.filter(link => this.auth.hasPermission(link.module, 'view'));
+  }
 
   private searchSubject = new Subject<string>();
 
@@ -45,6 +66,54 @@ export class AppComponent implements OnInit {
     ).subscribe(query => {
       this.executeSearch(query);
     });
+
+    // Voice Assistant Subscriptions
+    this.voiceAssistant.listening$.subscribe(listening => {
+      this.isListening = listening;
+    });
+
+    this.voiceAssistant.transcript$.subscribe(text => {
+      this.currentTranscript = text;
+    });
+
+    this.voiceAssistant.command$.subscribe(command => {
+      this.handleVoiceCommand(command);
+    });
+  }
+
+  private handleVoiceCommand(command: string) {
+    if (command.includes('attendance')) {
+      this.navigateTo('/attendance');
+    } else if (command.includes('member')) {
+      this.navigateTo('/members');
+    } else if (command.includes('dashboard')) {
+      this.navigateTo('/dashboard');
+    } else if (command.includes('sabha')) {
+      this.navigateTo('/sabhas');
+    } else if (command.includes('role')) {
+      this.navigateTo('/roles');
+    } else if (command.includes('financial') || command.includes('wallet')) {
+      this.navigateTo('/wallet');
+    } else if (command.includes('report')) {
+      this.navigateTo('/reports');
+    } else if (command.includes('stop') || command.includes('close')) {
+      this.closeVoiceAssistant();
+    }
+  }
+
+  toggleVoiceAssistant() {
+    this.isVoiceActive = !this.isVoiceActive;
+    if (this.isVoiceActive) {
+      this.voiceAssistant.startListening();
+      this.currentTranscript = 'Listening... Say something like "Go to Attendance"';
+    } else {
+      this.voiceAssistant.stopListening();
+    }
+  }
+
+  closeVoiceAssistant() {
+    this.isVoiceActive = false;
+    this.voiceAssistant.stopListening();
   }
 
   ngOnInit() {

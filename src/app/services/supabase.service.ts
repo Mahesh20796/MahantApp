@@ -432,4 +432,123 @@ export class SupabaseService {
       .sort((a: any, b: any) => b.count - a.count)
       .slice(0, limit);
   }
+
+  // ------------------------------------
+  // DASHBOARD TRENDS METHODS
+  // ------------------------------------
+  async getWeeklyAttendanceTrends(limit: number = 7) {
+    if (this.isMockMode) {
+      return [
+        { date: '2026-04-01', count: 145 },
+        { date: '2026-04-08', count: 152 },
+        { date: '2026-04-15', count: 148 },
+        { date: '2026-04-22', count: 160 }
+      ];
+    }
+
+    // Get the last N distinct dates from attendance
+    const { data, error } = await this.supabase
+      .from('attendance')
+      .select('attendance_date, status')
+      .eq('status', 'P')
+      .order('attendance_date', { ascending: false });
+
+    if (error) throw error;
+
+    const trends = (data || []).reduce((acc: any, curr: any) => {
+      const date = curr.attendance_date;
+      if (!acc[date]) acc[date] = 0;
+      acc[date]++;
+      return acc;
+    }, {});
+
+    return Object.entries(trends)
+      .map(([date, count]) => ({ date, count: count as number }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(-limit);
+  }
+
+  async getFinancialTrends(limit: number = 6) {
+    if (this.isMockMode) {
+      return [
+        { month: 'Nov', balance: 90000 },
+        { month: 'Dec', balance: 95000 },
+        { month: 'Jan', balance: 105000 },
+        { month: 'Feb', balance: 110000 },
+        { month: 'Mar', balance: 120000 },
+        { month: 'Apr', balance: 125000 }
+      ];
+    }
+
+    const { data, error } = await this.supabase
+      .from('wallet_transactions')
+      .select('amount, type, created_at')
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    let runningBalance = 0;
+    const monthlyData: any = {};
+
+    (data || []).forEach(t => {
+      const date = new Date(t.created_at);
+      const monthKey = date.toLocaleString('default', { month: 'short' });
+      runningBalance += (t.type === 'deposit' ? Number(t.amount) : -Number(t.amount));
+      monthlyData[monthKey] = runningBalance;
+    });
+
+    return Object.entries(monthlyData)
+      .map(([month, balance]) => ({ month, balance: balance as number }))
+      .slice(-limit);
+  }
+
+  async getLastSabhaStats() {
+    if (this.isMockMode) {
+      return {
+        title: 'Yuva Sabha',
+        date: '2026-04-22',
+        present: 160,
+        absent: 15,
+        leave: 5,
+        total: 180
+      };
+    }
+
+    // 1. Get the latest attendance date
+    const { data: latest, error: lError } = await this.supabase
+      .from('attendance')
+      .select('attendance_date, sabha_id')
+      .order('attendance_date', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (lError || !latest) return null;
+
+    // 2. Get counts for that date
+    const { data: records, error: rError } = await this.supabase
+      .from('attendance')
+      .select('status')
+      .eq('attendance_date', latest.attendance_date);
+
+    if (rError) throw rError;
+
+    // 3. Get Sabha title
+    const { data: sabha } = await this.supabase
+      .from('sabhas')
+      .select('title')
+      .eq('id', latest.sabha_id)
+      .single();
+
+    const counts = records.reduce((acc: any, curr: any) => {
+      acc[curr.status === 'P' ? 'present' : (curr.status === 'A' ? 'absent' : 'leave')]++;
+      return acc;
+    }, { present: 0, absent: 0, leave: 0 });
+
+    return {
+      title: sabha?.title || 'Last Sabha',
+      date: latest.attendance_date,
+      ...counts,
+      total: records.length
+    };
+  }
 }

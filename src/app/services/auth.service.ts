@@ -1,16 +1,18 @@
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from './supabase.service';
-import { BehaviorSubject, Observable, from, map } from 'rxjs';
+import { BehaviorSubject, Observable, from, map, of } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
+import { PermissionMatrix } from '../models/role.model';
 
 export type UserRole = 'Admin' | 'Executive' | 'Volunteer' | 'User';
 
 export interface UserProfile {
   id: string;
   email: string;
-  role: UserRole;
+  role: string;
   fullName: string;
+  permissions?: PermissionMatrix;
 }
 
 @Injectable({
@@ -57,21 +59,19 @@ export class AuthService {
   }
 
   async login(email: string, pass: string) {
-    // Developer Bypass for Local Testing (Active only when project is down)
+    // Developer Bypass for Local Testing
     if (email === 'admin@gmail.com' && (pass === 'Admin@123' || pass === 'admin')) {
       console.log('🛡️ Developer Bypass Activated (Local Mode)');
       const profile: UserProfile = {
         id: 'dev-001',
         email: email,
-        role: 'Admin',
-        fullName: 'System Developer'
+        role: 'Sabha Sanchalak',
+        fullName: 'System Developer',
+        permissions: this.getAdminPermissions()
       };
       this.currentUserSubject.next(profile);
-      
-      // Persist for refresh
       localStorage.setItem('sb_dev_user', JSON.stringify(profile));
-      
-      this._initializedResolver(); // Force ready
+      this._initializedResolver();
       return { session: { user: { id: 'dev-001' } } };
     }
 
@@ -89,38 +89,90 @@ export class AuthService {
 
   private async fetchProfile(uid: string, email: string) {
     console.log('Fetching profile for:', email);
-    const { data, error } = await this.supabase
+    const { data: profileData, error: profileError } = await this.supabase
       .from('profiles')
       .select('*')
       .eq('id', uid)
       .single();
 
-    if (error) {
-      console.warn('Profile not found or error:', error);
-      // Fallback for demo: if no profile, assign basic role
+    if (profileError) {
+      console.warn('Profile not found:', profileError);
       this.currentUserSubject.next({
         id: uid,
         email: email,
         role: 'Volunteer',
-        fullName: email.split('@')[0]
+        fullName: email.split('@')[0],
+        permissions: this.getVolunteerPermissions()
       });
       return;
     }
 
-    if (data) {
-      console.log('User Role found:', data.role);
-      let roleVal = data.role as string;
-      // Normalize admin -> Admin
-      if (roleVal.toLowerCase() === 'admin') roleVal = 'Admin';
+    // Fetch Role Permissions
+    let permissions: PermissionMatrix = this.getPermissionsByRole(profileData.role || 'Volunteer');
 
-      const profile: UserProfile = {
-        id: uid,
-        email: email,
-        role: roleVal as UserRole,
-        fullName: data.full_name || email.split('@')[0]
-      };
-      this.currentUserSubject.next(profile);
+    try {
+      // Attempt to fetch from DB if column exists, but handle missing column gracefully
+      const { data: roleData, error: roleError } = await this.supabase
+        .from('roles')
+        .select('permissions')
+        .eq('name', profileData.role)
+        .single();
+      
+      if (!roleError && roleData?.permissions) {
+        permissions = roleData.permissions as PermissionMatrix;
+      }
+    } catch (err) {
+      console.warn('DB permissions fetch failed, using fallback mapping:', err);
     }
+
+    const profile: UserProfile = {
+      id: uid,
+      email: email,
+      role: profileData.role || 'Volunteer',
+      fullName: profileData.full_name || email.split('@')[0],
+      permissions: permissions
+    };
+    this.currentUserSubject.next(profile);
+  }
+
+  public getPermissionsByRole(roleName: string): PermissionMatrix {
+    roleName = roleName.trim();
+    
+    // Super Admin / Sanchalak mapping
+    if (roleName.includes('Admin') || roleName.includes('Sanchalak')) {
+      return this.getAdminPermissions();
+    }
+
+    // Sampark Karyakar / Executive mapping
+    if (roleName.includes('Sampark') || roleName.includes('Executive')) {
+      return {
+        dashboard: { view: false, create: false, edit: false, delete: false },
+        members: { view: false, create: false, edit: false, delete: false },
+        attendance: { view: true, create: true, edit: true, delete: true },
+        sabha_history: { view: true, create: true, edit: true, delete: true },
+        financials: { view: false, create: false, edit: false, delete: false },
+        roles: { view: false, create: false, edit: false, delete: false },
+        reports: { view: false, create: false, edit: false, delete: false }
+      };
+    }
+
+    // Default Volunteer mapping
+    return this.getVolunteerPermissions();
+  }
+
+  private getAdminPermissions(): PermissionMatrix {
+    const modules = ['dashboard', 'sabha_history', 'members', 'roles', 'attendance', 'financials', 'reports'];
+    const perms: PermissionMatrix = {};
+    modules.forEach(m => {
+      perms[m] = { view: true, create: true, edit: true, delete: true };
+    });
+    return perms;
+  }
+
+  private getVolunteerPermissions(): PermissionMatrix {
+    return {
+      attendance: { view: true, create: true, edit: false, delete: false }
+    };
   }
 
   async logout() {
@@ -130,11 +182,22 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
-  get userRole(): UserRole {
+  get userRole(): string {
     return this.currentUserSubject.value?.role || 'User';
   }
 
   get isLoggedIn(): boolean {
     return !!this.currentUserSubject.value;
+  }
+
+  hasPermission(module: string, action: 'view' | 'create' | 'edit' | 'delete'): boolean {
+    const profile = this.currentUserSubject.value;
+    if (!profile) return false;
+    
+    // Super Admin check
+    if (profile.role === 'Admin' || profile.role === 'Sabha Sanchalak') return true;
+    
+    if (!profile.permissions || !profile.permissions[module]) return false;
+    return profile.permissions[module][action];
   }
 }

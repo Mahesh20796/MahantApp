@@ -152,8 +152,8 @@ import { Sabha } from '../../models/sabha.model';
       <div class="modal-content glass-card animate-slide-up" (click)="$event.stopPropagation()">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
           <div>
-            <h3 style="margin: 0; font-size: 1.25rem;">👥 Participants List</h3>
-            <p style="margin: 4px 0 0; font-size: 0.85rem; color: var(--text-muted);">Assigned members for <b>{{selectedSabha?.title}}</b></p>
+            <h3 style="margin: 0; font-size: 1.25rem; color: #FFFFFF;">👥 Participants List</h3>
+            <p style="margin: 4px 0 0; font-size: 0.85rem; color: #B1B1B1;">Assigned members for <b>{{selectedSabha?.title}}</b></p>
           </div>
           <button class="btn" (click)="closeModal()" style="padding: 8px; background: var(--bg-sidebar); border-radius: 50%; width: 36px; height: 36px; color: white;">✕</button>
         </div>
@@ -169,8 +169,8 @@ import { Sabha } from '../../models/sabha.model';
                {{ m.name.charAt(0) }}
             </div>
             <div>
-               <div style="font-weight: 700; font-size: 0.95rem;">{{ m.name }}</div>
-               <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">👑 {{ m.role }} • 📱 {{ m.contact_details }}</div>
+               <div style="font-weight: 700; font-size: 0.95rem; color: #FFFFFF;">{{ m.name }}</div>
+               <div style="font-size: 0.75rem; color: #B1B1B1; font-weight: 600;">👑 {{ m.role }} • 📱 {{ m.contact_details }}</div>
             </div>
           </div>
         </div>
@@ -192,8 +192,9 @@ import { Sabha } from '../../models/sabha.model';
     .modal-content {
       width: 100%; max-width: 500px;
       padding: 32px;
-      background: #161618;
-      border: 1px solid rgba(255,255,255,0.08);
+      background: var(--bg-sidebar);
+      border: 1px solid var(--border-color);
+      color: white;
     }
   `]
 })

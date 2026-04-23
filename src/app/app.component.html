@@ -7,7 +7,7 @@
              <img src="assets/logo.png" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border-color);">
              <div style="font-size: 1.1rem; font-weight: 900; color: var(--text-dark); letter-spacing: -0.02em;">RANA MANDAL <span style="color: var(--primary);">SABHA</span></div>
           </div>
-          <button class="menu-toggle-btn" (click)="toggleMobileMenu()" aria-label="Toggle Menu" style="color: var(--text-dark);">
+          <button class="menu-toggle-btn" (click)="toggleMobileMenu()" aria-label="Toggle Menu" style="color: var(--text-dark); background: var(--bg-card); border: 1px solid var(--border-color); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: var(--shadow-sm);">
             {{ isMobileMenuOpen ? '✕' : '☰' }}
           </button>
         </ng-container>
@@ -18,34 +18,43 @@
 
       <!-- Sidebar -->
       <aside class="sidebar" [class.sidebar-open]="isMobileMenuOpen" *ngIf="!isLoginPage && (auth.currentUser$ | async) as user">
+        <!-- Mobile Close Button inside Sidebar -->
+        <button class="show-on-mobile" (click)="closeMobileMenu()" 
+                style="position: absolute; top: 16px; right: 16px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white; font-size: 1.2rem; z-index: 10;">
+          ✕
+        </button>
+
         <div style="padding: 40px 24px; text-align: center;">
             <div style="width: 100px; height: 100px; border-radius: 50%; background: white; margin: 0 auto 20px; overflow: hidden; border: 3px solid var(--primary); box-shadow: 0 12px 32px rgba(30, 58, 138, 0.4);">
                <img src="assets/logo.png" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
             <div style="font-size: 1.5rem; font-weight: 900; letter-spacing: -0.05em; color: white;">RANA MANDAL <span style="color: var(--primary);">SABHA</span></div>
-            <div style="font-size: 0.65rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-top: 6px; letter-spacing: 0.25em;">Administrative Center</div>
+            <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; margin-top: 6px; letter-spacing: 0.25em;">Administrative Center</div>
         </div>
         
         <nav style="padding-top: 24px;">
-          <a (click)="navigateTo('/dashboard')" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link" [class.active]="router.url.includes('/dashboard')">📊 Dashboard</a>
-          <a (click)="navigateTo('/sabhas')" routerLinkActive="active" class="nav-link" [class.active]="router.url.includes('/sabhas')">🗓️ Sabha History</a>
-          <a (click)="navigateTo('/members')" routerLinkActive="active" class="nav-link" [class.active]="router.url.includes('/members')">👥 Member Registry</a>
-          <a (click)="navigateTo('/roles')" routerLinkActive="active" class="nav-link" [class.active]="router.url.includes('/roles')">🛡️ System Roles</a>
-          <a (click)="navigateTo('/attendance')" routerLinkActive="active" class="nav-link" [class.active]="router.url.includes('/attendance')">📝 Attendance</a>
-          <a (click)="navigateTo('/wallet')" routerLinkActive="active" class="nav-link" [class.active]="router.url.includes('/wallet')">💳 Financials</a>
-          <a (click)="navigateTo('/reports')" routerLinkActive="active" class="nav-link" [class.active]="router.url.includes('/reports')">📈 Reports</a>
+          <ng-container *ngFor="let link of filteredNavLinks">
+            <a (click)="navigateTo(link.path)" 
+               [routerLink]="link.path"
+               routerLinkActive="active" 
+               [routerLinkActiveOptions]="{exact: link.path === '/dashboard'}" 
+               class="nav-link" 
+               [class.active]="router.url.includes(link.path)">
+               {{ link.label }}
+            </a>
+          </ng-container>
         </nav>
 
         <!-- Profile / Logout / Theme -->
         <div style="margin-top: auto; padding: 24px; border-top: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.1);">
            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
               <div style="display: flex; align-items: center; gap: 12px;">
-                <div style="width: 44px; height: 44px; background: linear-gradient(135deg, var(--primary), var(--accent)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; border: 1px solid rgba(255,255,255,0.1); font-size: 1.2rem;">
+                <div style="width: 44px; height: 44px; background: linear-gradient(135deg, var(--primary), var(--accent)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; border: 1px solid rgba(255,255,255,0.2); font-size: 1.2rem;">
                    {{ user.fullName.charAt(0) }}
                 </div>
                 <div>
                   <div style="font-size: 0.9rem; font-weight: 700; color: white;">{{ user.fullName }}</div>
-                  <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">👑 {{ user.role }}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">👑 {{ user.role }}</div>
                 </div>
               </div>
               <button (click)="theme.toggleTheme()" class="btn" aria-label="Toggle Theme" style="padding: 10px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; transition: all 0.3s;">
@@ -54,7 +63,7 @@
            </div>
 
            <div style="margin-bottom: 16px;">
-             <button (click)="openSearch()" class="btn" style="width: 100%; justify-content: space-between; background: rgba(255,255,255,0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); font-size: 0.8rem; height: 40px;">
+             <button (click)="openSearch()" class="btn" style="width: 100%; justify-content: space-between; background: rgba(255,255,255,0.08); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1); font-size: 0.8rem; height: 40px;">
                <span>🔍 Global Search</span>
                <span style="font-size: 0.7rem; opacity: 0.5;">Ctrl+K</span>
              </button>
@@ -106,6 +115,41 @@
       <main class="main-content">
         <router-outlet></router-outlet>
       </main>
+      
+      <!-- Voice Assistant Overlay -->
+      <div *ngIf="isVoiceActive" class="voice-overlay" (click)="closeVoiceAssistant()">
+        <div class="voice-panel animate-slide-up" (click)="$event.stopPropagation()">
+          <div class="voice-header">
+            <div class="voice-title">
+               <span class="pulse-icon" [class.listening]="isListening"></span>
+               Voice Assistant
+            </div>
+            <button class="close-btn" (click)="closeVoiceAssistant()">✕</button>
+          </div>
+          
+          <div class="voice-content">
+             <div class="transcript-box">
+                "{{ currentTranscript }}"
+             </div>
+             <div class="voice-waves" *ngIf="isListening">
+                <span></span><span></span><span></span><span></span><span></span>
+             </div>
+             <p class="voice-hint">Try saying: "Go to Attendance" or "Show Members"</p>
+          </div>
+          
+          <div class="voice-footer">
+             <button class="btn voice-action-btn" (click)="toggleVoiceAssistant()" [class.active]="isListening">
+                {{ isListening ? '⏹ Stop' : '🎤 Listen Again' }}
+             </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Voice Floating Button -->
+      <button class="voice-fab" *ngIf="!isLoginPage && (auth.currentUser$ | async)" (click)="toggleVoiceAssistant()" [class.active]="isVoiceActive">
+         <span class="mic-icon" *ngIf="!isVoiceActive">🎤</span>
+         <span class="mic-icon pulse" *ngIf="isVoiceActive">👂</span>
+      </button>
 
       <ng-template #noNav></ng-template>
     </div>

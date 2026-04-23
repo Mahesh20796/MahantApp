@@ -1,21 +1,21 @@
 :root {
   /* Institutional Palette - High Contrast */
-  --primary: #1e3a8a;
-  --primary-hover: #1e40af;
-  --primary-soft: rgba(30, 58, 138, 0.08);
-  --primary-active: #172554;
-  --accent: #ca8a04;
+  --primary: #F87941;
+  --primary-hover: #E66A31;
+  --primary-soft: rgba(248, 121, 65, 0.08);
+  --primary-active: #D35B27;
+  --accent: #F9B095;
   --success: #10B981;
   --danger: #EF4444;
   --warning: #F59E0B;
   
   /* Light Theme */
-  --bg-main: #F8FAFC;
+  --bg-main: #FDFCFC;
   --bg-card: #FFFFFF;
-  --bg-sidebar: #0F172A;
-  --text-dark: #0F172A;
-  --text-muted: #64748B;
-  --border-color: #E2E8F0;
+  --bg-sidebar: #2F3035;
+  --text-dark: #2F3035;
+  --text-muted: #B1B1B1;
+  --border-color: #E6E4E6;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
   --shadow-premium: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -25,11 +25,11 @@
 
 .dark-theme {
   --bg-main: #0B0B0C;
-  --bg-card: #161618;
+  --bg-card: #1A1B1E;
   --bg-sidebar: #000000;
-  --text-dark: #F1F5F9;
-  --text-muted: #94A3B8;
-  --border-color: #262626;
+  --text-dark: #FDFCFC;
+  --text-muted: #B1B1B1;
+  --border-color: #2F3035;
   --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
 }
 
@@ -76,7 +76,7 @@ body {
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  color: #94A3B8;
+  color: var(--text-muted);
   text-decoration: none;
   border-radius: 8px;
   margin: 4px 16px;
@@ -86,7 +86,7 @@ body {
   gap: 12px;
 }
 
-.nav-link:hover { color: white; background: rgba(255,255,255,0.05); }
+.nav-link:hover { color: white; background: rgba(255,255,255,0.1); }
 .nav-link.active { background: var(--primary); color: white; }
 
 .main-content {
@@ -157,6 +157,9 @@ body {
   justify-content: center;
   font-size: 1.5rem;
   flex-shrink: 0;
+  background: linear-gradient(135deg, var(--primary-soft), var(--bg-main));
+  border: 1px solid var(--border-color);
+  color: var(--primary);
 }
 
 /* Page Header System */
@@ -233,6 +236,9 @@ body {
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
+  background: var(--primary-soft);
+  color: var(--primary);
+  border: 1px solid rgba(248, 121, 65, 0.1);
 }
 .badge-active { background: #DCFCE7; color: #166534; }
 .badge-inactive { background: #FEE2E2; color: #991B1B; }

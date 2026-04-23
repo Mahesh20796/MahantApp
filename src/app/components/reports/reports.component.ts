@@ -28,11 +28,11 @@ import * as XLSX from 'xlsx';
 
     <!-- PART 1: ATTENDANCE REPORT -->
     <div *ngIf="activePart === 'attendance'" class="report-section animate-slide-up">
-      <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px;">
+      <div class="report-grid">
         
         <div class="card">
           <h3 class="card-title" style="margin-bottom: 20px;">📅 Custom Range Report</h3>
-          <div style="display: flex; gap: 16px; align-items: flex-end; margin-bottom: 24px;">
+          <div class="filter-row">
             <div style="flex: 1;">
               <label class="form-label">Start Date</label>
               <input type="date" class="form-control" [(ngModel)]="attendanceRange.start">
@@ -41,7 +41,7 @@ import * as XLSX from 'xlsx';
               <label class="form-label">End Date</label>
               <input type="date" class="form-control" [(ngModel)]="attendanceRange.end">
             </div>
-            <button class="btn btn-primary" (click)="fetchAttendanceSummary()" style="height: 48px; padding: 0 24px;">Generate</button>
+            <button class="btn btn-primary generate-btn" (click)="fetchAttendanceSummary()">Generate</button>
           </div>
 
           <!-- P/L/A Summary -->
@@ -60,73 +60,78 @@ import * as XLSX from 'xlsx';
             </div>
           </div>
 
-          <div style="display: flex; gap: 12px; margin-top: 24px;">
+          <div class="action-buttons-row">
             <button class="btn btn-success" (click)="exportToExcel('attendance')" style="flex: 1; justify-content: center; height: 48px;">
-               📊 Download Excel
+               📊 Excel
             </button>
             <button class="btn btn-danger" (click)="exportToPDF('attendance')" style="flex: 1; justify-content: center; height: 48px;">
-               📄 Download PDF
+               📄 PDF
             </button>
           </div>
         </div>
 
-        <div class="card">
-          <h3 class="card-title" style="margin-bottom: 8px;">📊 Attendance Excellence</h3>
-          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">Top performers based on consistent presence in the selected period.</p>
+        <div class="card excellence-card animate-fade-in">
+          <div class="card-header-modern">
+            <h3 class="card-title-modern">📊 Attendance Excellence</h3>
+            <p class="card-subtitle-modern">Top performers based on total working hours in selected period</p>
+          </div>
           
-          <div style="display: flex; gap: 12px; align-items: flex-end; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
+          <div class="filter-row mini-filter excellence-filters">
             <div style="flex: 1;">
-              <label class="form-label">From</label>
-              <input type="date" class="form-control" [(ngModel)]="leaderboardRange.start">
+              <label class="form-label">From Date</label>
+              <input type="date" class="form-control premium-input" [(ngModel)]="leaderboardRange.start">
             </div>
             <div style="flex: 1;">
-              <label class="form-label">To</label>
-              <input type="date" class="form-control" [(ngModel)]="leaderboardRange.end">
+              <label class="form-label">To Date</label>
+              <input type="date" class="form-control premium-input" [(ngModel)]="leaderboardRange.end">
             </div>
-            <button class="btn btn-primary" (click)="fetchLeaderboard()" style="height: 48px; min-width: 48px;">
-               ⚡
+            <button class="btn btn-generate-report" (click)="fetchLeaderboard()" [disabled]="isLoadingLeaderboard">
+               <span *ngIf="!isLoadingLeaderboard">⚡ Generate Report</span>
+               <span *ngIf="isLoadingLeaderboard" class="spinner-small"></span>
             </button>
           </div>
 
-          <div class="top-list">
-             <div *ngFor="let bird of topBirds; let i = index" class="bird-item" [class.gold]="i === 0">
-                <div class="rank">{{ i + 1 }}</div>
-                <div class="avatar">{{ bird.name?.charAt(0) }}</div>
+          <!-- Empty State -->
+          <div *ngIf="!hasGeneratedLeaderboard" class="empty-state-container">
+             <div class="empty-state-icon">📝</div>
+             <p>Select date range and generate report</p>
+          </div>
+
+          <!-- Loading State (Skeleton) -->
+          <div *ngIf="isLoadingLeaderboard" class="loading-state-container">
+             <div *ngFor="let i of [1,2,3]" class="skeleton bird-skeleton"></div>
+          </div>
+
+          <!-- Results Section -->
+          <div class="top-list" *ngIf="hasGeneratedLeaderboard && !isLoadingLeaderboard">
+             <div *ngFor="let bird of topBirds; let i = index" class="bird-item-modern" 
+                  [class.gold-border]="i === 0" [class.silver-border]="i === 1" [class.bronze-border]="i === 2">
+                <div class="rank-modern" [class.rank-1]="i === 0" [class.rank-2]="i === 1" [class.rank-3]="i === 2">{{ i + 1 }}</div>
+                <div class="avatar-modern" [style.background]="getAvatarBg(i)">{{ bird.name?.charAt(0) }}</div>
                 <div style="flex: 1;">
-                   <div style="font-weight: 800; font-size: 0.95rem;">{{ bird.name }}</div>
-                   <div style="font-size: 0.7rem; color: var(--text-muted);">{{ bird.count }} Presents</div>
+                   <div class="bird-name-modern">{{ bird.name }}</div>
+                   <div class="bird-stats-modern">
+                      <span>✅ {{ bird.count }} Presents</span>
+                      <span class="hours-highlight">⏱️ {{ (bird.count * 1.5).toFixed(1) }} Hours</span>
+                   </div>
                 </div>
-                <div class="medal" *ngIf="i === 0">🥇</div>
-                <div class="medal" *ngIf="i === 1">🥈</div>
-                <div class="medal" *ngIf="i === 2">🥉</div>
+                <div class="medal-modern" *ngIf="i === 0">🥇</div>
+                <div class="medal-modern" *ngIf="i === 1">🥈</div>
+                <div class="medal-modern" *ngIf="i === 2">🥉</div>
              </div>
              
-             <div *ngIf="topBirds.length === 0" style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.8rem;">
-                No data for this period.
+             <div *ngIf="topBirds.length === 0" class="no-data-message">
+                No data for this period. Try adjusting your dates.
              </div>
           </div>
         </div>
 
-      </div>
-
-      <!-- History View -->
-      <div class="card" style="margin-top: 24px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-           <h3 class="card-title">📈 Attendance Sustainability</h3>
-           <div class="pill-group">
-              <button [class.active]="historyView === '6mo'" (click)="setHistoryView('6mo')">6 Months</button>
-              <button [class.active]="historyView === '1yr'" (click)="setHistoryView('1yr')">Yearly</button>
-           </div>
-        </div>
-        <div style="height: 200px; background: var(--bg-main); border-radius: 12px; border: 1px dashed var(--border-color); display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
-           [ Graph Visualization Placeholder: Historical Trends ]
-        </div>
       </div>
     </div>
 
     <!-- PART 2: FINANCIAL REPORT -->
     <div *ngIf="activePart === 'financial'" class="report-section animate-slide-up">
-       <div style="display: grid; grid-template-columns: 1.1fr 1.5fr; gap: 24px;">
+       <div class="report-grid financial-grid">
           
           <!-- Manual Range Card -->
           <div class="card">
@@ -161,7 +166,7 @@ import * as XLSX from 'xlsx';
                 </div>
              </div>
 
-             <div style="display: flex; gap: 12px; margin-top: 32px;">
+             <div class="action-buttons-row" style="margin-top: 32px;">
                 <button class="btn btn-success" (click)="exportToExcel('financial_range')" style="flex: 1; justify-content: center; height: 50px;">
                    📊 Excel
                 </button>
@@ -185,7 +190,7 @@ import * as XLSX from 'xlsx';
              </div>
 
              <div *ngIf="selectedMemberId && memberTransactions.length > 0" class="member-history-container">
-                <div style="margin-bottom: 20px; padding: 16px; background: var(--bg-main); border-radius: 12px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <div class="member-summary-box">
                    <div>
                       <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Contributions</div>
                       <div style="font-size: 1.4rem; font-weight: 900; color: var(--success);">₹{{ memberTotalContributions | number:'1.0-0' }}</div>
@@ -280,26 +285,6 @@ import * as XLSX from 'xlsx';
     .bird-item.gold { background: rgba(30, 58, 138, 0.05); border-color: rgba(30, 58, 138, 0.2); }
     .medal { font-size: 1.2rem; }
 
-    .pill-group {
-      background: var(--bg-main);
-      border-radius: 12px;
-      padding: 4px;
-      display: flex;
-    }
-    .pill-group button {
-      border: none;
-      background: transparent;
-      padding: 6px 16px;
-      border-radius: 10px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .pill-group button.active {
-      background: var(--primary);
-      color: white;
-    }
-
     .mini-stat-card {
       padding: 24px;
       background: var(--bg-main);
@@ -340,13 +325,261 @@ import * as XLSX from 'xlsx';
        border-bottom: 1px solid var(--bg-sidebar-hover);
     }
     .timeline-item:last-child { border-bottom: none; }
+
+    .report-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 24px;
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 16px;
+      align-items: flex-end;
+      margin-bottom: 24px;
+    }
+
+    .generate-btn {
+      height: 48px;
+      padding: 0 24px;
+    }
+
+    .action-buttons-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .member-summary-box {
+      margin-bottom: 20px;
+      padding: 16px;
+      background: var(--bg-main);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      .report-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .filter-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      .mini-filter {
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 16px;
+      }
+
+      .action-buttons-row {
+        flex-direction: column;
+      }
+
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .member-summary-box {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+
+      .member-summary-box button {
+        width: 100%;
+      }
+
+      .excellence-filters {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .btn-generate-report {
+        width: 100%;
+      }
+    }
+
+    .excellence-card {
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-premium);
+    }
+
+    .card-header-modern {
+      margin-bottom: 24px;
+    }
+
+    .card-title-modern {
+      font-size: 1.4rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+      color: var(--text-dark);
+    }
+
+    .card-subtitle-modern {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .btn-generate-report {
+      height: 48px;
+      padding: 0 24px;
+      background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.3s;
+      box-shadow: 0 4px 12px rgba(30, 58, 138, 0.2);
+    }
+
+    .btn-generate-report:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(30, 58, 138, 0.3);
+      filter: brightness(1.1);
+    }
+
+    .empty-state-container {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .bird-item-modern {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 12px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .bird-item-modern:hover {
+      transform: scale(1.02);
+      border-color: var(--primary);
+      box-shadow: var(--shadow-md);
+    }
+
+    .rank-modern {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      border-radius: 50%;
+      background: var(--bg-main);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .rank-1 { background: #FEF3C7; color: #92400E; }
+    .rank-2 { background: #F1F5F9; color: #475569; }
+    .rank-3 { background: #FFEDD5; color: #9A3412; }
+
+    .gold-border { border-left: 4px solid #FFD700; }
+    .silver-border { border-left: 4px solid #C0C0C0; }
+    .bronze-border { border-left: 4px solid #CD7F32; }
+
+    .avatar-modern {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: white;
+      font-size: 1.1rem;
+    }
+
+    .bird-name-modern {
+      font-weight: 800;
+      font-size: 1rem;
+      color: var(--text-dark);
+      margin-bottom: 4px;
+    }
+
+    .bird-stats-modern {
+      display: flex;
+      gap: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .hours-highlight {
+      color: var(--primary);
+      background: var(--primary-soft);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .medal-modern {
+      font-size: 1.5rem;
+    }
+
+    .spinner-small {
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .bird-skeleton {
+      height: 76px;
+      margin-bottom: 12px;
+      border-radius: 16px;
+    }
+
+    .loading-state-container {
+      padding: 8px 0;
+    }
+
+    .no-data-message {
+      padding: 40px;
+      text-align: center;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
   `]
 })
 export class ReportsComponent implements OnInit {
   private supabase = inject(SupabaseService);
 
   activePart: 'attendance' | 'financial' = 'attendance';
-  historyView: '6mo' | '1yr' = '6mo';
+  isLoadingLeaderboard = false;
+  hasGeneratedLeaderboard = false;
 
   attendanceRange = {
     start: new Date(new Date().setDate(1)).toISOString().split('T')[0],
@@ -382,16 +615,29 @@ export class ReportsComponent implements OnInit {
     this.activePart = part;
   }
 
-  setHistoryView(view: '6mo' | '1yr') {
-    this.historyView = view;
-  }
 
   async fetchAttendanceSummary() {
     this.attendanceSummary = await this.supabase.getAttendanceSummaryReport(this.attendanceRange.start, this.attendanceRange.end);
   }
 
   async fetchLeaderboard() {
-    this.topBirds = await this.supabase.getTopEarlyBirds(3, this.leaderboardRange.start, this.leaderboardRange.end);
+    this.isLoadingLeaderboard = true;
+    this.hasGeneratedLeaderboard = true;
+    
+    try {
+      // Small artificial delay for premium feel
+      await new Promise(resolve => setTimeout(resolve, 800));
+      this.topBirds = await this.supabase.getTopEarlyBirds(10, this.leaderboardRange.start, this.leaderboardRange.end);
+    } catch (e) {
+      console.error('Leaderboard error', e);
+    } finally {
+      this.isLoadingLeaderboard = false;
+    }
+  }
+
+  getAvatarBg(index: number): string {
+    const colors = ['#1e3a8a', '#ca8a04', '#10b981', '#ef4444', '#8b5cf6'];
+    return colors[index % colors.length];
   }
 
   async fetchFinancialReport() {
