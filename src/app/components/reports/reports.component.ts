@@ -71,20 +71,38 @@ import * as XLSX from 'xlsx';
         </div>
 
         <div class="card">
-          <h3 class="card-title" style="margin-bottom: 20px;">🏆 Early Bird Top 3</h3>
-          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">Members who arrived earliest based on session schedules.</p>
+          <h3 class="card-title" style="margin-bottom: 8px;">📊 Attendance Excellence</h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">Top performers based on consistent presence in the selected period.</p>
           
+          <div style="display: flex; gap: 12px; align-items: flex-end; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
+            <div style="flex: 1;">
+              <label class="form-label">From</label>
+              <input type="date" class="form-control" [(ngModel)]="leaderboardRange.start">
+            </div>
+            <div style="flex: 1;">
+              <label class="form-label">To</label>
+              <input type="date" class="form-control" [(ngModel)]="leaderboardRange.end">
+            </div>
+            <button class="btn btn-primary" (click)="fetchLeaderboard()" style="height: 48px; min-width: 48px;">
+               ⚡
+            </button>
+          </div>
+
           <div class="top-list">
-             <div *ngFor="let bird of topBirds; let i = index" class="bird-item">
+             <div *ngFor="let bird of topBirds; let i = index" class="bird-item" [class.gold]="i === 0">
                 <div class="rank">{{ i + 1 }}</div>
                 <div class="avatar">{{ bird.name?.charAt(0) }}</div>
                 <div style="flex: 1;">
                    <div style="font-weight: 800; font-size: 0.95rem;">{{ bird.name }}</div>
-                   <div style="font-size: 0.7rem; color: var(--text-muted);">{{ bird.count }} on-time sessions</div>
+                   <div style="font-size: 0.7rem; color: var(--text-muted);">{{ bird.count }} Presents</div>
                 </div>
                 <div class="medal" *ngIf="i === 0">🥇</div>
                 <div class="medal" *ngIf="i === 1">🥈</div>
                 <div class="medal" *ngIf="i === 2">🥉</div>
+             </div>
+             
+             <div *ngIf="topBirds.length === 0" style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.8rem;">
+                No data for this period.
              </div>
           </div>
         </div>
@@ -259,6 +277,7 @@ import * as XLSX from 'xlsx';
     }
     .bird-item .rank { width: 28px; font-weight: 800; color: var(--primary); font-size: 1.1rem; }
     .bird-item .avatar { width: 36px; height: 36px; border-radius: 10px; background: var(--primary-soft); color: var(--primary); display: flex; justify-content: center; font-weight: 800; align-items: center; }
+    .bird-item.gold { background: rgba(30, 58, 138, 0.05); border-color: rgba(30, 58, 138, 0.2); }
     .medal { font-size: 1.2rem; }
 
     .pill-group {
@@ -344,13 +363,18 @@ export class ReportsComponent implements OnInit {
   memberTransactions: any[] = [];
   memberTotalContributions: number = 0;
 
+  leaderboardRange = {
+    start: new Date(new Date().setDate(1)).toISOString().split('T')[0],
+    end: new Date().toISOString().split('T')[0]
+  };
+
   attendanceSummary: any = null;
   topBirds: any[] = [];
   financialStats = { deposits: 0, withdrawals: 0 };
 
   async ngOnInit() {
     await this.fetchAttendanceSummary();
-    await this.fetchTopBirds();
+    await this.fetchLeaderboard();
     this.members = await this.supabase.getMembers();
   }
 
@@ -366,8 +390,8 @@ export class ReportsComponent implements OnInit {
     this.attendanceSummary = await this.supabase.getAttendanceSummaryReport(this.attendanceRange.start, this.attendanceRange.end);
   }
 
-  async fetchTopBirds() {
-    this.topBirds = await this.supabase.getTopEarlyBirds(3);
+  async fetchLeaderboard() {
+    this.topBirds = await this.supabase.getTopEarlyBirds(3, this.leaderboardRange.start, this.leaderboardRange.end);
   }
 
   async fetchFinancialReport() {

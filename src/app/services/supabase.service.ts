@@ -399,14 +399,12 @@ export class SupabaseService {
     }, { P: 0, A: 0, L: 0 });
   }
 
-  async getTopEarlyBirds(limit: number = 3) {
+  async getTopEarlyBirds(limit: number = 3, startDate?: string, endDate?: string) {
     if (this.isMockMode) {
-      return this.mockMembers.slice(0, limit).map((m, i) => ({ ...m, early_count: 5 - i }));
+      return this.mockMembers.slice(0, limit).map((m, i) => ({ ...m, name: m.name, count: 12 - i }));
     }
 
-    // Logic: Fetch all present attendance records joined with sabhas
-    // This is complex for a single query, so we'll fetch and aggregate in code for now
-    const { data, error } = await this.supabase
+    let query = this.supabase
       .from('attendance')
       .select(`
         status,
@@ -416,15 +414,15 @@ export class SupabaseService {
       `)
       .eq('status', 'P');
 
+    if (startDate) query = query.gte('attendance_date', startDate);
+    if (endDate) query = query.lte('attendance_date', endDate);
+
+    const { data, error } = await query;
     if (error) throw error;
 
-    // Simplified logic: Just count how many times they were present for now, 
-    // real "early bird" would compare time_marked vs time_schedule.
-    // For this design task, I'll aggregate based on a simple presence count 
-    // or simulate the time comparison if fields are reliable.
-    
     const results = (data || []).reduce((acc: any, curr: any) => {
-        const mid = curr.members.id;
+        const mid = curr.members?.id;
+        if (!mid) return acc;
         if (!acc[mid]) acc[mid] = { name: curr.members.name, count: 0 };
         acc[mid].count++;
         return acc;
