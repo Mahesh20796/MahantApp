@@ -78,14 +78,20 @@ export class SupabaseService {
       const newMember = { ...member, id: (this.mockMembers.length + 1).toString() };
       this.mockMembers.push(newMember);
       console.log('📝 Mock: Added member locally', newMember);
-      return [newMember];
+      return { data: [newMember], error: null };
     }
-    const { data, error } = await this.supabase
-      .from('members')
-      .insert([member])
-      .select();
-    if (error) throw error;
-    return data;
+    return await this.supabase.from('members').insert([member]).select();
+  }
+
+  async updateMember(id: string, member: any) {
+    if (this.isMockMode) {
+      const index = this.mockMembers.findIndex(m => m.id === id);
+      if (index !== -1) {
+        this.mockMembers[index] = { ...this.mockMembers[index], ...member };
+      }
+      return { data: null, error: null };
+    }
+    return await this.supabase.from('members').update(member).eq('id', id);
   }
 
   async getSabhas() {
@@ -193,12 +199,19 @@ export class SupabaseService {
   }
 
   async addRole(role: any) {
-    const { data, error } = await this.supabase
-      .from('roles')
-      .insert([role])
-      .select();
-    if (error) throw error;
-    return data;
+    if (this.isMockMode) {
+      const newRole = { ...role, id: 'R' + (this.mockMembers.length + 1) };
+      // No local storage for roles in mock mode for now, just return
+      return { data: [newRole], error: null };
+    }
+    return await this.supabase.from('roles').insert([role]).select();
+  }
+
+  async updateRole(id: string, role: any) {
+    if (this.isMockMode) {
+      return { data: null, error: null };
+    }
+    return await this.supabase.from('roles').update(role).eq('id', id);
   }
 
   // ------------------------------------

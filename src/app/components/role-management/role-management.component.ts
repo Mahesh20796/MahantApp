@@ -97,30 +97,36 @@ import { Role } from '../../models/role.model';
           <tbody>
             <tr *ngFor="let r of roles" class="table-row-hover">
               <td>
-                <div style="display: flex; align-items: center; gap: 12px;">
-                   <div class="role-icon" [style.background]="getRoleColor(r.name)">🛡️</div>
-                   <div style="font-weight: 800; color: #FFFFFF;">{{r.name}}</div>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                   <div class="role-icon" [style.background]="getRoleColor(r.name, 0.15)" [style.border-color]="getRoleColor(r.name, 0.3)">
+                      <span [style.color]="getRoleColor(r.name)">🛡️</span>
+                   </div>
+                   <div style="font-weight: 800; color: var(--text-dark); font-size: 1rem;">{{r.name}}</div>
                 </div>
               </td>
               <td>
-                <span class="badge" [style.background]="getRoleColor(r.name, 0.1)" [style.color]="getRoleColor(r.name)">
-                  {{ r.name.includes('Admin') || r.name.includes('Sanchalak') ? 'Super Admin' : 'Staff' }}
+                <span class="badge" [style.background]="getRoleColor(r.name, 0.1)" [style.color]="getRoleColor(r.name)" 
+                      style="font-weight: 900; letter-spacing: 0.05em; padding: 6px 12px; border-radius: 8px; border: 1px solid currentColor;">
+                  {{ (r.name.includes('Admin') || r.name.includes('Sanchalak') ? 'Super Admin' : 'Staff') | uppercase }}
                 </span>
               </td>
               <td>
-                <div style="color: var(--text-muted); font-size: 0.8rem; font-weight: 600; max-width: 250px;">
+                <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600; max-width: 250px;">
                   {{r.description}}
                 </div>
               </td>
               <td>
-                 <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                    <span *ngFor="let p of getPermissionSummary(r)" class="mini-pill">{{ p }}</span>
+                 <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <span *ngFor="let p of getPermissionSummary(r)" class="mini-pill" 
+                          style="background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-muted); padding: 4px 10px; border-radius: 8px;">
+                       {{ p }}
+                    </span>
                  </div>
               </td>
               <td>
                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                   <button class="btn edit-btn" (click)="editRole(r)">✏️</button>
-                   <button class="btn delete-btn" (click)="deleteRole(r.id)">🗑️</button>
+                   <button class="btn edit-btn" (click)="editRole(r)" style="background: var(--bg-card); border-color: var(--border-color);">✏️</button>
+                   <button class="btn delete-btn" (click)="deleteRole(r.id)" style="background: #fff5f5; border-color: #ffe3e3;">🗑️</button>
                 </div>
               </td>
             </tr>
@@ -133,13 +139,13 @@ import { Role } from '../../models/role.model';
         <div class="mobile-card-list">
           <div *ngFor="let r of roles" class="mobile-card">
             <div class="mobile-card-header">
-               <div style="font-weight: 800; color: #FFFFFF;">{{r.name}}</div>
-               <span class="badge" [style.background]="getRoleColor(r.name, 0.1)" [style.color]="getRoleColor(r.name)">FY-{{ r.year }}</span>
+               <div style="font-weight: 800; color: var(--text-dark); font-size: 1.1rem;">{{r.name}}</div>
+               <span class="badge" [style.background]="getRoleColor(r.name, 0.1)" [style.color]="getRoleColor(r.name)">{{ (r.name.includes('Admin') || r.name.includes('Sanchalak') ? 'Super Admin' : 'Staff') | uppercase }}</span>
             </div>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 12px 0;">{{ r.description }}</p>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin: 16px 0; font-weight: 500;">{{ r.description }}</p>
             <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;">
-               <button class="btn" style="background: var(--bg-sidebar-hover); padding: 8px 16px;" (click)="editRole(r)">Edit</button>
-               <button class="btn" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); padding: 8px 16px;" (click)="deleteRole(r.id)">Delete</button>
+               <button class="btn" style="background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-dark); padding: 10px 20px; border-radius: 10px;" (click)="editRole(r)">Edit</button>
+               <button class="btn" style="background: #fff5f5; border: 1px solid #ffe3e3; color: var(--danger); padding: 10px 20px; border-radius: 10px;" (click)="deleteRole(r.id)">Delete</button>
             </div>
           </div>
         </div>
@@ -346,9 +352,9 @@ export class RoleManagementComponent implements OnInit {
 
         let result;
         if (this.editingId) {
-          result = await this.supabaseService.client.from('roles').update(payload).eq('id', this.editingId);
+          result = await this.supabaseService.updateRole(this.editingId, payload);
         } else {
-          result = await this.supabaseService.client.from('roles').insert([payload]);
+          result = await this.supabaseService.addRole(payload);
         }
         
         if (result.error) throw result.error;

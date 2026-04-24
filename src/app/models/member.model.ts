@@ -10,4 +10,5 @@ export interface Member {
   joiningDate: Date;
   status: 'Active' | 'Inactive';
   walletBalance: number;
+  password?: string;
 }

@@ -40,14 +40,14 @@ interface AttendanceRecord {
         <div class="form-group" style="margin-bottom: 0;">
           <label class="form-label" style="font-size: 0.75rem; color: var(--text-muted);">Active Sabha Module</label>
           <select class="form-control premium-input" [(ngModel)]="selectedSabhaId" (change)="onSabhaChange()">
-            <option value="" disabled>-- Select Sabha --</option>
-            <option *ngFor="let s of sabhas" [value]="s.id">{{ s.title }}</option>
+            <option value="" disabled>-- Select Scheduled Sabha --</option>
+            <option *ngFor="let s of sabhas" [value]="s.id">{{ s.title }} ({{ s.sabha_date | date:'dd-MM-yyyy' }})</option>
           </select>
         </div>
         
         <div class="form-group" style="margin-bottom: 0;">
           <label class="form-label" style="font-size: 0.75rem; color: var(--text-muted);">Operational Date</label>
-          <input type="date" class="form-control premium-input" [(ngModel)]="selectedDate" (change)="loadAttendance()">
+          <input type="date" class="form-control premium-input" [(ngModel)]="selectedDate" (change)="loadAttendance()" [max]="maxDate" [disabled]="!!selectedSabhaId">
         </div>
         
         <div class="form-group" style="margin-bottom: 0;">
@@ -97,9 +97,24 @@ interface AttendanceRecord {
               </td>
               <td>
                 <div style="display:flex; gap: 8px; justify-content: flex-end;">
-                  <button class="btn" [style.background]="record.status === 'P' ? 'var(--success)' : 'var(--bg-sidebar-hover)'" [style.color]="record.status === 'P' ? 'white' : 'var(--text-muted)'" style="padding: 10px 18px; border-radius: 12px; border: 1px solid var(--border-color); font-weight: 800; transition: all 0.3s;" (click)="mark(record, 'P')">P</button>
-                  <button class="btn" [style.background]="record.status === 'A' ? 'var(--danger)' : 'var(--bg-sidebar-hover)'" [style.color]="record.status === 'A' ? 'white' : 'var(--text-muted)'" style="padding: 10px 18px; border-radius: 12px; border: 1px solid var(--border-color); font-weight: 800; transition: all 0.3s;" (click)="mark(record, 'A')">A</button>
-                  <button class="btn" [style.background]="record.status === 'L' ? 'var(--warning)' : 'var(--bg-sidebar-hover)'" [style.color]="record.status === 'L' ? 'white' : 'var(--text-muted)'" style="padding: 10px 18px; border-radius: 12px; border: 1px solid var(--border-color); font-weight: 800; transition: all 0.3s;" (click)="mark(record, 'L')">L</button>
+                  <button class="btn" 
+                          [disabled]="!selectedSabhaId"
+                          [style.background]="record.status === 'P' ? 'var(--success)' : 'rgba(16, 185, 129, 0.08)'" 
+                          [style.color]="record.status === 'P' ? 'white' : 'var(--success)'" 
+                          [style.border-color]="record.status === 'P' ? 'var(--success)' : 'rgba(16, 185, 129, 0.2)'"
+                          style="padding: 10px 20px; border-radius: 12px; font-weight: 800; border: 1.5px solid; transition: all 0.2s; opacity: selectedSabhaId ? 1 : 0.5;" (click)="mark(record, 'P')">P</button>
+                  <button class="btn" 
+                          [disabled]="!selectedSabhaId"
+                          [style.background]="record.status === 'A' ? 'var(--danger)' : 'rgba(239, 68, 68, 0.08)'" 
+                          [style.color]="record.status === 'A' ? 'white' : 'var(--danger)'" 
+                          [style.border-color]="record.status === 'A' ? 'var(--danger)' : 'rgba(239, 68, 68, 0.2)'"
+                          style="padding: 10px 20px; border-radius: 12px; font-weight: 800; border: 1.5px solid; transition: all 0.2s; opacity: selectedSabhaId ? 1 : 0.5;" (click)="mark(record, 'A')">A</button>
+                  <button class="btn" 
+                          [disabled]="!selectedSabhaId"
+                          [style.background]="record.status === 'L' ? 'var(--warning)' : 'rgba(245, 158, 11, 0.08)'" 
+                          [style.color]="record.status === 'L' ? 'white' : 'var(--warning)'" 
+                          [style.border-color]="record.status === 'L' ? 'var(--warning)' : 'rgba(245, 158, 11, 0.2)'"
+                          style="padding: 10px 20px; border-radius: 12px; font-weight: 800; border: 1.5px solid; transition: all 0.2s; opacity: selectedSabhaId ? 1 : 0.5;" (click)="mark(record, 'L')">L</button>
                 </div>
               </td>
             </tr>
@@ -131,21 +146,24 @@ interface AttendanceRecord {
 
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px;">
               <button class="btn" (click)="mark(record, 'P')" 
+                      [disabled]="!selectedSabhaId"
                       [style.background]="record.status === 'P' ? 'var(--success)' : 'var(--bg-card)'" 
                       [style.color]="record.status === 'P' ? 'white' : 'var(--text-dark)'"
-                      style="justify-content: center; padding: 14px 8px; border: 1px solid var(--border-color); font-weight: 800; border-radius: 12px; font-size: 0.75rem; box-shadow: var(--shadow-sm);">
+                      style="justify-content: center; padding: 14px 8px; border: 1px solid var(--border-color); font-weight: 800; border-radius: 12px; font-size: 0.75rem; box-shadow: var(--shadow-sm); opacity: selectedSabhaId ? 1 : 0.5;">
                 {{ record.status === 'P' ? 'PRESENT ✅' : 'PRESENT' }}
               </button>
               <button class="btn" (click)="mark(record, 'A')" 
+                      [disabled]="!selectedSabhaId"
                       [style.background]="record.status === 'A' ? 'var(--danger)' : 'var(--bg-card)'" 
                       [style.color]="record.status === 'A' ? 'white' : 'var(--text-dark)'"
-                      style="justify-content: center; padding: 14px 8px; border: 1px solid var(--border-color); font-weight: 800; border-radius: 12px; font-size: 0.75rem; box-shadow: var(--shadow-sm);">
+                      style="justify-content: center; padding: 14px 8px; border: 1px solid var(--border-color); font-weight: 800; border-radius: 12px; font-size: 0.75rem; box-shadow: var(--shadow-sm); opacity: selectedSabhaId ? 1 : 0.5;">
                 {{ record.status === 'A' ? 'ABSENT ❌' : 'ABSENT' }}
               </button>
               <button class="btn" (click)="mark(record, 'L')" 
+                      [disabled]="!selectedSabhaId"
                       [style.background]="record.status === 'L' ? 'var(--warning)' : 'var(--bg-card)'" 
                       [style.color]="record.status === 'L' ? 'white' : 'var(--text-dark)'"
-                      style="justify-content: center; padding: 14px 8px; border: 1px solid var(--border-color); font-weight: 800; border-radius: 12px; font-size: 0.75rem; box-shadow: var(--shadow-sm);">
+                      style="justify-content: center; padding: 14px 8px; border: 1px solid var(--border-color); font-weight: 800; border-radius: 12px; font-size: 0.75rem; box-shadow: var(--shadow-sm); opacity: selectedSabhaId ? 1 : 0.5;">
                 {{ record.status === 'L' ? 'LEAVE 🏠' : 'LEAVE' }}
               </button>
             </div>
@@ -168,17 +186,22 @@ interface AttendanceRecord {
          </div>
 
          <button *ngIf="auth.hasPermission('attendance', 'create')" 
-                 class="btn hide-on-mobile" (click)="saveAttendance()" [disabled]="!isAnyMarked || isLoading" 
+                 class="btn hide-on-mobile" (click)="saveAttendance()" [disabled]="!isAnyMarked || isLoading || !selectedSabhaId" 
                  [style.background]="isAnyMarked ? 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)' : 'var(--bg-sidebar-hover)'"
                  style="height: 56px; padding: 0 48px; border-radius: var(--radius-md); color: white; font-weight: 800; font-size: 1rem; border: none; box-shadow: var(--shadow-premium);">
-           💾 Commit Attendance Records
+                       <span style="font-size: 1.3rem;">💾</span>
+            <span>COMMIT & SAVE ATTENDANCE</span>
+
+
          </button>
       </div>
       <!-- Floating Action Button for Mobile Commit -->
       <button class="fab show-on-mobile animate-fade-in" (click)="saveAttendance()" 
               *ngIf="isAnyMarked && auth.hasPermission('attendance', 'create')" 
-              [disabled]="isLoading" aria-label="Commit Records Swapped">
-        <span style="font-size: 1.5rem;">💾</span>
+              [disabled]="isLoading" aria-label="Commit Records Swapped"
+              style="display: flex; flex-direction: column; gap: 4px; line-height: 1;">
+        <span style="font-size: 1.2rem;">💾</span>
+        <span style="font-size: 0.55rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em;">SAVE</span>
       </button>
     </div>
   `,
@@ -211,6 +234,12 @@ export class AttendanceManagementComponent implements OnInit {
   searchQuery: string = '';
   attendanceList: AttendanceRecord[] = [];
   isLoading = false;
+  maxDate: string = '';
+
+  constructor() {
+    const now = new Date();
+    this.maxDate = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+  }
 
   get unmarkedCount() {
     return this.attendanceList.filter(r => r.status === null).length;
@@ -256,8 +285,6 @@ export class AttendanceManagementComponent implements OnInit {
     await this.loadSabhas();
     if (this.sabhas.length > 0) {
       this.selectedSabhaId = this.sabhas[0].id;
-      const now = new Date();
-      this.selectedDate = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
       this.onSabhaChange();
     }
   }
@@ -271,6 +298,10 @@ export class AttendanceManagementComponent implements OnInit {
   }
 
   onSabhaChange() {
+    const selected = this.sabhas.find(s => s.id === this.selectedSabhaId);
+    if (selected) {
+      this.selectedDate = selected.sabha_date;
+    }
     this.loadAttendance();
   }
 

@@ -26,6 +26,10 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<UserProfile | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
   
+  get currentUserValue(): UserProfile | null {
+    return this.currentUserSubject.value;
+  }
+  
   private _initializedResolver: (value: void | PromiseLike<void>) => void = () => {};
   public initialized = new Promise<void>((resolve) => {
     this._initializedResolver = resolve;
@@ -80,11 +84,41 @@ export class AuthService {
       password: pass
     });
 
-    if (error) throw error;
-    if (data.session) {
+    if (!error && data.session) {
       await this.fetchProfile(data.session.user.id, data.session.user.email!);
+      return data;
     }
-    return data;
+
+    // 3. Custom Member Registry Login
+    console.log('🔍 Checking Member Registry for credentials...');
+    const { data: member, error: memberError } = await this.supabase
+      .from('members')
+      .select('*')
+      .eq('email_id', email)
+      .eq('password', pass)
+      .eq('status', 'Active')
+      .single();
+
+    if (memberError || !member) {
+      throw new Error(error?.message || 'Invalid credentials or inactive account.');
+    }
+
+    console.log('✅ Member Login Successful:', member.name);
+    const permissions = await this.fetchPermissionsForRole(member.role);
+    
+    const profile: UserProfile = {
+      id: member.id,
+      email: member.email_id,
+      role: member.role,
+      fullName: member.name,
+      permissions: permissions
+    };
+    
+    this.currentUserSubject.next(profile);
+    localStorage.setItem('sb_dev_user', JSON.stringify(profile)); // Persistence for member session
+    this._initializedResolver();
+    
+    return { session: { user: { id: member.id } } };
   }
 
   private async fetchProfile(uid: string, email: string) {
@@ -102,28 +136,13 @@ export class AuthService {
         email: email,
         role: 'Volunteer',
         fullName: email.split('@')[0],
-        permissions: this.getVolunteerPermissions()
+        permissions: this.getPermissionsByRole('Volunteer')
       });
       return;
     }
 
-    // Fetch Role Permissions
-    let permissions: PermissionMatrix = this.getPermissionsByRole(profileData.role || 'Volunteer');
-
-    try {
-      // Attempt to fetch from DB if column exists, but handle missing column gracefully
-      const { data: roleData, error: roleError } = await this.supabase
-        .from('roles')
-        .select('permissions')
-        .eq('name', profileData.role)
-        .single();
-      
-      if (!roleError && roleData?.permissions) {
-        permissions = roleData.permissions as PermissionMatrix;
-      }
-    } catch (err) {
-      console.warn('DB permissions fetch failed, using fallback mapping:', err);
-    }
+    // Fetch Dynamic Role Permissions
+    const permissions = await this.fetchPermissionsForRole(profileData.role || 'Volunteer');
 
     const profile: UserProfile = {
       id: uid,
@@ -133,6 +152,29 @@ export class AuthService {
       permissions: permissions
     };
     this.currentUserSubject.next(profile);
+  }
+
+  public async fetchPermissionsForRole(roleName: string): Promise<PermissionMatrix> {
+    // 1. Start with Hardcoded Fallback
+    let permissions = this.getPermissionsByRole(roleName);
+
+    try {
+      // 2. Attempt to fetch from "roles" table in database
+      const { data: roleData, error: roleError } = await this.supabase
+        .from('roles')
+        .select('permissions')
+        .eq('name', roleName.trim())
+        .single();
+      
+      if (!roleError && roleData?.permissions) {
+        console.log(`🔐 Loaded dynamic permissions for role: ${roleName}`);
+        permissions = roleData.permissions as PermissionMatrix;
+      }
+    } catch (err) {
+      console.warn('DB permissions fetch failed, using hardcoded mapping:', err);
+    }
+
+    return permissions;
   }
 
   public getPermissionsByRole(roleName: string): PermissionMatrix {
@@ -147,7 +189,7 @@ export class AuthService {
     if (roleName.includes('Sampark') || roleName.includes('Executive')) {
       return {
         dashboard: { view: false, create: false, edit: false, delete: false },
-        members: { view: false, create: false, edit: false, delete: false },
+        members: { view: true, create: false, edit: false, delete: false },
         attendance: { view: true, create: true, edit: true, delete: true },
         sabha_history: { view: true, create: true, edit: true, delete: true },
         financials: { view: false, create: false, edit: false, delete: false },

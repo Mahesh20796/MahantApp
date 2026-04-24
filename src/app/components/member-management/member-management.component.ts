@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { SupabaseService } from '../../services/supabase.service';
+import { AuthService } from '../../services/auth.service';
 import { Member } from '../../models/member.model';
 
 @Component({
@@ -15,7 +16,7 @@ import { Member } from '../../models/member.model';
           <h2 class="card-title" style="margin: 0;">👥 Member Registry</h2>
           <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Search, register, and manage organization members.</p>
         </div>
-        <button class="btn" [ngClass]="showForm ? 'btn-danger' : 'btn-primary'" (click)="toggleForm()" style="justify-content: center;">
+        <button *ngIf="isAdmin" class="btn" [ngClass]="showForm ? 'btn-danger' : 'btn-primary'" (click)="toggleForm()" style="justify-content: center;">
           {{ showForm ? '✕ Close Portal' : '+ New Registration' }}
         </button>
       </div>
@@ -24,7 +25,7 @@ import { Member } from '../../models/member.model';
       <div *ngIf="showForm" style="margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--border-color);">
         <form [formGroup]="memberForm" (ngSubmit)="onSubmit()">
           <!-- Photo & Basic Identity -->
-          <div class="responsive-grid" style="grid-template-columns: 120px 1fr 1fr; gap: 32px; margin-bottom: 32px;">
+          <div class="responsive-grid" style="grid-template-columns: 120px 1fr 1.5fr 1.5fr; gap: 24px; margin-bottom: 32px;">
             <div (click)="photoInput.click()" style="width: 120px; height: 120px; border-radius: 12px; background: var(--bg-main); border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; margin: 0 auto;">
               <img *ngIf="memberForm.get('photo')?.value" [src]="memberForm.get('photo')?.value" style="width: 100%; height: 100%; object-fit: cover;">
               <div *ngIf="!memberForm.get('photo')?.value" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
@@ -54,28 +55,36 @@ import { Member } from '../../models/member.model';
                 <div *ngIf="memberForm.get('emailId')?.touched && memberForm.get('emailId')?.invalid" style="color: #ef4444; font-size: 0.7rem; margin-top: 4px;">Valid email is required</div>
               </div>
               <div class="form-group" style="margin:0;">
+                <label class="form-label">Login Password *</label>
+                <input type="password" class="form-control" formControlName="password" placeholder="Min 6 characters">
+                <div *ngIf="memberForm.get('password')?.touched && memberForm.get('password')?.invalid" style="color: #ef4444; font-size: 0.7rem; margin-top: 4px;">Password is required</div>
+              </div>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              <div class="form-group" style="margin:0;">
                 <label class="form-label">System Role *</label>
                 <select class="form-control" formControlName="role">
                   <option *ngFor="let role of rolesList" [value]="role.name">{{ role.name }}</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Branch/Sabha *</label>
+                <select class="form-control" formControlName="sabhaName">
+                  <option *ngFor="let s of sabhaList" [value]="s">{{ s }}</option>
                 </select>
               </div>
             </div>
           </div>
 
           <!-- Extended Information -->
-          <div class="responsive-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 32px;">
-             <div class="form-group">
+          <div class="responsive-grid" style="grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 32px;">
+             <div class="form-group" style="margin:0;">
                 <label class="form-label">Residential Address *</label>
                 <input type="text" class="form-control" formControlName="address" placeholder="Full address details">
                 <div *ngIf="memberForm.get('address')?.touched && memberForm.get('address')?.invalid" style="color: #ef4444; font-size: 0.7rem; margin-top: 4px;">Address is required</div>
              </div>
-             <div class="form-group">
-                <label class="form-label">Branch/Sabha *</label>
-                <select class="form-control" formControlName="sabhaName">
-                  <option *ngFor="let s of sabhaList" [value]="s.title">{{ s.title }}</option>
-                </select>
-             </div>
-             <div class="form-group">
+             <div class="form-group" style="margin:0;">
                 <label class="form-label">Account Status *</label>
                 <select class="form-control" formControlName="status">
                   <option value="Active">Active Account</option>
@@ -109,7 +118,7 @@ import { Member } from '../../models/member.model';
           <table class="table">
             <thead>
               <tr>
-                <th style="width: 40px;"><input type="checkbox" [checked]="isAllSelected()" (change)="toggleAll($event)"></th>
+                <th *ngIf="isAdmin" style="width: 40px;"><input type="checkbox" [checked]="isAllSelected()" (change)="toggleAll($event)"></th>
                 <th>Member Profile</th>
                 <th>Contact Details</th>
                 <th>Affiliation</th>
@@ -119,7 +128,7 @@ import { Member } from '../../models/member.model';
             </thead>
             <tbody>
               <tr *ngFor="let m of filteredMembers" class="table-row-hover">
-                <td><input type="checkbox" [checked]="selectedMemberIds.has(m.id!)" (change)="toggleSelection(m.id!)"></td>
+                <td *ngIf="isAdmin"><input type="checkbox" [checked]="selectedMemberIds.has(m.id!)" (change)="toggleSelection(m.id!)"></td>
                 <td>
                   <div style="display: flex; align-items: center; gap: 12px;">
                     <div style="width: 40px; height: 40px; border-radius: 8px; background: var(--bg-main); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; overflow: hidden; font-weight: 700; font-size: 0.9rem;">
@@ -146,8 +155,8 @@ import { Member } from '../../models/member.model';
                   </span>
                 </td>
                 <td style="text-align: right;">
-                  <button class="btn" style="padding: 8px; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.85rem;" (click)="editMember(m)">Edit</button>
-                  <button class="btn" style="padding: 8px; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.1); color: var(--danger); font-size: 0.85rem; margin-left: 8px;" (click)="deleteMember(m.id!)">Delete</button>
+                  <button class="btn" style="padding: 8px; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.85rem;" (click)="editMember(m)">Edit Profile</button>
+                  <button *ngIf="isAdmin" class="btn" style="padding: 8px; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.1); color: var(--danger); font-size: 0.85rem; margin-left: 8px;" (click)="deleteMember(m.id!)">Delete</button>
                 </td>
               </tr>
             </tbody>
@@ -177,8 +186,8 @@ import { Member } from '../../models/member.model';
                <div>🏰 {{ m.sabhaName }}</div>
             </div>
             <div style="margin-top: 16px; pt-16; border-top: 1px solid var(--border-color); display: flex; gap: 12px; padding-top: 16px;">
-               <button class="btn" style="flex: 1; justify-content: center; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-dark);" (click)="editMember(m)">Edit</button>
-               <button class="btn btn-danger" style="flex: 1; justify-content: center;" (click)="deleteMember(m.id!)">Delete</button>
+               <button class="btn" style="flex: 1; justify-content: center; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-dark);" (click)="editMember(m)">Edit Profile</button>
+               <button *ngIf="isAdmin" class="btn btn-danger" style="flex: 1; justify-content: center;" (click)="deleteMember(m.id!)">Delete</button>
             </div>
           </div>
         </div>
@@ -207,20 +216,33 @@ import { Member } from '../../models/member.model';
 export class MemberManagementComponent implements OnInit {
   selectedMemberIds: Set<string> = new Set();
   supabaseService = inject(SupabaseService);
+  auth = inject(AuthService);
   fb = inject(FormBuilder);
   
   members: Member[] = [];
   rolesList: any[] = [];
-  sabhaList: any[] = [];
+  sabhaList: string[] = ['Yuva Sabha', 'Bal Sabha', 'Sanyukt sabha', 'Yuvti Sabha', 'Balika Sabha'];
   showForm = false;
   editingId: string | null = null;
   searchQuery: string = '';
   isLoading = false;
 
+  get isAdmin() {
+    return this.auth.userRole === 'Admin' || this.auth.userRole === 'Sabha Sanchalak';
+  }
+
   get filteredMembers() {
-    if (!this.searchQuery.trim()) return this.members;
+    let list = this.members;
+    
+    // Self-Service Logic: Non-admins only see themselves
+    if (!this.isAdmin) {
+      const currentUser = this.auth.currentUserValue;
+      list = this.members.filter(m => m.id === currentUser?.id || m.emailId === currentUser?.email);
+    }
+
+    if (!this.searchQuery.trim()) return list;
     const query = this.searchQuery.toLowerCase();
-    return this.members.filter(m => 
+    return list.filter(m => 
       m.name.toLowerCase().includes(query) || 
       m.contactDetails.includes(query) ||
       (m.emailId && m.emailId.toLowerCase().includes(query))
@@ -233,8 +255,9 @@ export class MemberManagementComponent implements OnInit {
     emailId: ['', [Validators.required, Validators.email]],
     photo: ['', Validators.required],
     address: ['', Validators.required],
+    password: ['', [Validators.required, Validators.minLength(6)]],
     role: ['Regular Member', Validators.required],
-    sabhaName: ['', Validators.required],
+    sabhaName: ['Yuva Sabha', Validators.required],
     status: ['Active', Validators.required]
   });
 
@@ -247,7 +270,6 @@ export class MemberManagementComponent implements OnInit {
     try {
       await Promise.all([
         this.loadRoles(),
-        this.loadSabhaDropdown(),
         this.loadMembers()
       ]);
     } finally {
@@ -269,7 +291,8 @@ export class MemberManagementComponent implements OnInit {
         sabhaName: item.sabha_name,
         joiningDate: item.joining_date,
         status: item.status,
-        walletBalance: item.wallet_balance
+        walletBalance: item.wallet_balance,
+        password: item.password
       }));
     } catch (error) {
       console.error('Error loading members:', error);
@@ -284,20 +307,10 @@ export class MemberManagementComponent implements OnInit {
     }
   }
 
-  async loadSabhaDropdown() {
-    try {
-      this.sabhaList = await this.supabaseService.getSabhas();
-      if (this.sabhaList.length > 0 && !this.memberForm.get('sabhaName')?.value) {
-        this.memberForm.patchValue({ sabhaName: this.sabhaList[0].title });
-      }
-    } catch (error) {
-      console.error('Error loading sabhas:', error);
-    }
-  }
 
   toggleForm() {
     this.showForm = !this.showForm;
-    if (!this.showForm) this.memberForm.reset({role: 'Regular Member', status: 'Active'});
+    if (!this.showForm) this.memberForm.reset({role: 'Regular Member', status: 'Active', sabhaName: 'Yuva Sabha'});
     this.editingId = null;
   }
 
@@ -323,17 +336,46 @@ export class MemberManagementComponent implements OnInit {
       address: m.address,
       role: m.role,
       sabhaName: m.sabhaName,
-      status: m.status
+      status: m.status,
+      password: m.password
     });
   }
 
   async deleteMember(id: string) {
-    if(confirm('Are you sure you want to delete this member? This action cannot be undone.')) {
-      const { error } = await this.supabaseService.client.from('members').delete().eq('id', id);
-      if (!error) {
+    if(confirm('Are you sure you want to delete this member? This will also remove all their attendance and financial history. This action cannot be undone.')) {
+      this.isLoading = true;
+      try {
+        // 1. Clean up related attendance records
+        const { error: attError } = await this.supabaseService.client
+          .from('attendance')
+          .delete()
+          .eq('member_id', id);
+        
+        if (attError) throw new Error('Failed to clean attendance: ' + attError.message);
+
+        // 2. Clean up related wallet transactions
+        const { error: txError } = await this.supabaseService.client
+          .from('wallet_transactions')
+          .delete()
+          .eq('member_id', id);
+
+        if (txError) throw new Error('Failed to clean transactions: ' + txError.message);
+
+        // 3. Finally delete the member
+        const { error: memError } = await this.supabaseService.client
+          .from('members')
+          .delete()
+          .eq('id', id);
+
+        if (memError) throw memError;
+
         this.members = this.members.filter(m => m.id !== id);
-      } else {
+        alert('Member and all related history removed successfully! 🧹');
+      } catch (error: any) {
+        console.error('Delete Error:', error);
         alert('Error deleting member: ' + error.message);
+      } finally {
+        this.isLoading = false;
       }
     }
   }
@@ -351,27 +393,32 @@ export class MemberManagementComponent implements OnInit {
           address: formValue.address,
           role: formValue.role,
           sabha_name: formValue.sabhaName,
-          status: formValue.status
+          status: formValue.status,
+          password: formValue.password
         };
 
         let result;
         if (this.editingId) {
-          result = await this.supabaseService.client.from('members').update(dbPayload).eq('id', this.editingId);
+          result = await this.supabaseService.updateMember(this.editingId, dbPayload);
         } else {
-          result = await this.supabaseService.client.from('members').insert([dbPayload]);
+          result = await this.supabaseService.addMember(dbPayload);
         }
         
         if (result && result.error) {
-          alert('Failed to save to database: ' + result.error.message);
+          if (result.error.message.includes('members_role_check')) {
+            alert('❌ Database Error: The selected role is not allowed by the database constraint. Please run the SQL fix provided in the report to enable dynamic roles.');
+          } else {
+            alert('Failed to save to database: ' + result.error.message);
+          }
           return;
         }
 
         alert(this.editingId ? 'Member record updated successfully! ✨' : 'New member registered successfully! ✨');
         await this.loadMembers();
         this.toggleForm();
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
-        alert('Unexpected error occurred while saving.');
+        alert('Unexpected error occurred: ' + (err.message || 'Check console for details.'));
       } finally {
         this.isLoading = false;
       }
@@ -420,19 +467,29 @@ export class MemberManagementComponent implements OnInit {
 
   async bulkDelete() {
     if (this.selectedMemberIds.size === 0) return;
-    if (!confirm(`Are you sure you want to delete ${this.selectedMemberIds.size} records?`)) return;
+    if (!confirm(`Are you sure you want to delete ${this.selectedMemberIds.size} records and all their associated history?`)) return;
     
     this.isLoading = true;
     try {
       const ids = Array.from(this.selectedMemberIds);
+      
+      // 1. Bulk clean attendance
+      await this.supabaseService.client.from('attendance').delete().in('member_id', ids);
+      
+      // 2. Bulk clean transactions
+      await this.supabaseService.client.from('wallet_transactions').delete().in('member_id', ids);
+
+      // 3. Delete members
       const { error } = await this.supabaseService.client.from('members').delete().in('id', ids);
+      
       if (error) throw error;
-      alert(`${ids.length} records deleted.`);
+      
+      alert(`${ids.length} records and their histories deleted successfully! 🧹`);
       this.selectedMemberIds.clear();
       await this.loadMembers();
     } catch (e) {
       console.error(e);
-      alert('Deletion failed.');
+      alert('Bulk deletion failed.');
     } finally {
       this.isLoading = false;
     }

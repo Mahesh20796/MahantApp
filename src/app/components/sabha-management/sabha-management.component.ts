@@ -16,28 +16,38 @@ import { Sabha } from '../../models/sabha.model';
           <h2 class="card-title" style="margin-bottom: 4px;">🗓️ Sabha History & Records</h2>
           <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">Comprehensive history of meetings, member roles, and registry status.</p>
         </div>
-        <button class="btn" [ngClass]="showForm ? 'btn-danger' : 'btn-primary'" (click)="toggleForm()" style="height: 48px; border-radius: var(--radius-md);" *ngIf="currentTab === 'schedules'">
+        <button class="btn" (click)="toggleForm()" 
+                [style.background]="showForm ? '#fee2e2' : 'var(--primary)'" 
+                [style.color]="showForm ? '#ef4444' : 'white'" 
+                [style.border]="showForm ? '1px solid #fecaca' : 'none'"
+                style="height: 44px; border-radius: 12px; font-weight: 700; padding: 0 20px; transition: all 0.3s;">
           {{ showForm ? '✕ Close Form' : '+ New Schedule' }}
         </button>
       </div>
 
       <!-- Tab Switcher -->
       <div style="display: flex; gap: 8px; margin-top: 28px; background: var(--bg-sidebar); padding: 6px; border-radius: var(--radius-lg); width: fit-content; border: 1px solid var(--border-color);">
-        <button class="btn" style="background: var(--primary); color: white; box-shadow: var(--shadow-md); padding: 10px 20px; border-radius: var(--radius-md); font-size: 0.9rem;">
+        <button class="btn" style="background: var(--primary); color: white; box-shadow: var(--shadow-md); padding: 10px 20px; border-radius: var(--radius-md); font-size: 0.9rem; font-weight: 700;">
           🗓️ Sabha Schedules
         </button>
       </div>
       
-      <div *ngIf="showForm && currentTab === 'schedules'" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-color);">
+      <div *ngIf="showForm" style="margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--border-color);">
         <form [formGroup]="sabhaForm" (ngSubmit)="onSubmit()">
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
-            <div class="form-group" style="grid-column: span 1.5;">
-              <label class="form-label">Sabha Title *</label>
-              <input type="text" class="form-control premium-input" formControlName="title" placeholder="e.g. Weekly Yuva Sabha">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; align-items: flex-end;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-weight: 800; color: var(--text-muted);">Sabha Title *</label>
+              <select class="form-control premium-input" formControlName="title">
+                <option value="Yuva Sabha">Yuva Sabha</option>
+                <option value="Bal Sabha">Bal Sabha</option>
+                <option value="Sanyukt sabha">Sanyukt sabha</option>
+                <option value="Yuvti Sabha">Yuvti Sabha</option>
+                <option value="Balika Sabha">Balika Sabha</option>
+              </select>
             </div>
             
-            <div class="form-group">
-              <label class="form-label">Sabha Category *</label>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-weight: 800; color: var(--text-muted);">Sabha Category *</label>
               <select class="form-control premium-input" formControlName="sabhaType">
                 <option value="Weekly Sabha">Weekly Meeting</option>
                 <option value="Special Sabha">Special Event</option>
@@ -45,21 +55,22 @@ import { Sabha } from '../../models/sabha.model';
               </select>
             </div>
             
-            <div class="form-group">
-              <label class="form-label">Sabha Date *</label>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-weight: 800; color: var(--text-muted);">Sabha Date *</label>
               <input type="date" class="form-control premium-input" formControlName="sabhaDate">
             </div>
-
-            <div class="form-group">
-              <label class="form-label">Meeting Start Time *</label>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-weight: 800; color: var(--text-muted);">Meeting Start Time *</label>
               <input type="time" class="form-control premium-input" formControlName="timeSchedule">
             </div>
-          </div>
-          
-          <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
-            <button type="submit" class="btn btn-success" [disabled]="sabhaForm.invalid || loading" style="height: 48px; border-radius: 14px; min-width: 160px; font-size: 1rem; justify-content: center;">
-              ✨ {{ loading ? 'Saving...' : (editingId ? 'Update Meeting' : 'Create & Schedule') }}
-            </button>
+
+            <div style="display: flex; justify-content: flex-end;">
+              <button type="submit" class="btn" [disabled]="sabhaForm.invalid || loading" 
+                      style="height: 52px; border-radius: 14px; min-width: 180px; font-size: 1rem; justify-content: center; background: #10b981; color: white; font-weight: 800; border: none; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+                ✨ {{ loading ? 'Saving...' : (editingId ? 'Update Meeting' : 'Create & Schedule') }}
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -74,7 +85,7 @@ import { Sabha } from '../../models/sabha.model';
               <th>Category</th>
               <th>Meeting Date</th>
               <th>Time Slot</th>
-              <th>Assigned Core</th>
+              <th>Attendance Stats</th>
               <th style="text-align: right;">Actions</th>
             </tr>
           </thead>
@@ -105,12 +116,10 @@ import { Sabha } from '../../models/sabha.model';
               </td>
               <td>
                 <div style="display: flex; align-items: center; gap: 10px; cursor: pointer;" (click)="showParticipants(s)">
-                    <div style="display: flex; -webkit-mask: linear-gradient(to right, black 70%, transparent);">
-                       <div *ngFor="let i of s.assignedMembers.slice(0,3)" style="width: 28px; height: 28px; border-radius: 50%; background: var(--primary-soft); border: 2px solid var(--bg-card); margin-left: -8px; font-size: 0.6rem; display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--primary);">
-                          {{ i.name.charAt(0) }}
-                       </div>
+                    <div style="padding: 6px 12px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                        <span style="font-weight: 800; color: #10b981; font-size: 0.9rem;">✅ {{s.presentCount}} Present</span>
+                        <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600; margin-left: 6px;">out of {{s.assignedMembers.length}}</span>
                     </div>
-                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary);">+{{s.assignedMembers.length}} Participants</span>
                 </div>
               </td>
               <td>
@@ -136,7 +145,7 @@ import { Sabha } from '../../models/sabha.model';
           </div>
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div (click)="showParticipants(s)" style="color: var(--primary); font-size: 0.8rem; font-weight: 700; cursor: pointer;">
-              👥 {{s.assignedMembers.length}} Active Members
+              📊 {{s.presentCount}} / {{s.assignedMembers.length}} Attended
             </div>
             <div style="display: flex; gap: 8px;">
                <button class="btn" style="padding: 8px; background: var(--bg-sidebar); border: 1px solid var(--border-color); color: var(--text-muted);" (click)="editSabha(s)">✏️</button>
@@ -168,8 +177,16 @@ import { Sabha } from '../../models/sabha.model';
             <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--primary-soft); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; border: 1px solid rgba(248, 121, 65, 0.2);">
                {{ m.name.charAt(0) }}
             </div>
-            <div>
-               <div style="font-weight: 700; font-size: 0.95rem; color: #FFFFFF;">{{ m.name }}</div>
+            <div style="flex: 1;">
+               <div style="display: flex; justify-content: space-between; align-items: center;">
+                 <div style="font-weight: 700; font-size: 0.95rem; color: #FFFFFF;">{{ m.name }}</div>
+                 <span class="badge" 
+                       [style.background]="m.attendanceStatus === 'P' ? 'rgba(16, 185, 129, 0.15)' : (m.attendanceStatus === 'A' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)')"
+                       [style.color]="m.attendanceStatus === 'P' ? '#10b981' : (m.attendanceStatus === 'A' ? '#ef4444' : '#f59e0b')"
+                       style="font-size: 0.65rem; border-radius: 6px; padding: 4px 8px;">
+                   {{ m.attendanceStatus === 'P' ? 'Present' : m.attendanceStatus === 'A' ? 'Absent' : m.attendanceStatus === 'L' ? 'Leave' : 'Unmarked' }}
+                 </span>
+               </div>
                <div style="font-size: 0.75rem; color: #B1B1B1; font-weight: 600;">👑 {{ m.role }} • 📱 {{ m.contact_details }}</div>
             </div>
           </div>
@@ -213,7 +230,7 @@ export class SabhaManagementComponent implements OnInit {
   selectedSabha: any = null;
 
   sabhaForm: FormGroup = this.fb.group({
-    title: ['', Validators.required],
+    title: ['Yuva Sabha', Validators.required],
     sabhaType: ['Weekly Sabha', Validators.required],
     sabhaDate: [new Date().toISOString().split('T')[0], Validators.required],
     timeSchedule: ['', Validators.required]
@@ -228,15 +245,38 @@ export class SabhaManagementComponent implements OnInit {
       const sabhaData = await this.supabaseService.getSabhas();
       const memberData = await this.supabaseService.getMembers();
       
+      // Fetch attendance counts for all sabhas
+      const { data: attendanceData, error: attError } = await this.supabaseService.client
+        .from('attendance')
+        .select('sabha_id, attendance_date, status, member_id');
+
+      if (attError) throw attError;
+
       this.sabhas = sabhaData.map((item: any) => {
-        const assigned = memberData.filter((m: any) => m.sabha_name === item.title);
+        // Members assigned to this sabha group
+        const groupMembers = memberData.filter((m: any) => m.sabha_name === item.title);
+        
+        // Map attendance status to each member for this specific date
+        const membersWithStatus = groupMembers.map((m: any) => {
+          const att = (attendanceData || []).find(a => 
+            a.sabha_id === item.id && a.attendance_date === item.sabha_date && a.member_id === m.id
+          );
+          return {
+            ...m,
+            attendanceStatus: att ? att.status : null
+          };
+        });
+
+        const presentCount = membersWithStatus.filter(m => m.attendanceStatus === 'P').length;
+
         return {
           id: item.id,
           title: item.title,
           sabhaType: item.sabha_type,
           sabhaDate: item.sabha_date,
           timeSchedule: item.time_schedule,
-          assignedMembers: assigned 
+          assignedMembers: membersWithStatus,
+          presentCount: presentCount
         };
       });
     } catch (error) {
@@ -248,6 +288,7 @@ export class SabhaManagementComponent implements OnInit {
     this.showForm = !this.showForm;
     if (!this.showForm) {
       this.sabhaForm.reset({
+        title: 'Yuva Sabha',
         sabhaType: 'Weekly Sabha', 
         sabhaDate: new Date().toISOString().split('T')[0]
       });
