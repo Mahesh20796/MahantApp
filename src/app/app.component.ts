@@ -215,6 +215,11 @@ export class AppComponent implements OnInit {
     this.router.navigate([path]);
   }
 
+  logout() {
+    this.closeMobileMenu();
+    this.auth.logout();
+  }
+
   toggleMobileMenu() {
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
   }

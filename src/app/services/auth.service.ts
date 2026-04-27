@@ -41,19 +41,52 @@ export class AuthService {
 
   private async checkInitialSession() {
     try {
-      // 1. Check for Developer Bypass Persistence
-      const devUser = localStorage.getItem('sb_dev_user');
-      if (devUser && environment.production === false) {
-          console.log('🔄 Restoring Persistent Developer Session...');
-          this.currentUserSubject.next(JSON.parse(devUser));
-          this._initializedResolver();
-          return;
-      }
-
-      // 2. Standard Supabase Session Rehydration
+      // 1. Prioritize Standard Supabase Session (Most Secure)
       const { data: { session } } = await this.supabase.auth.getSession();
       if (session) {
+        console.log('🔄 Restoring Supabase Auth Session...');
         await this.fetchProfile(session.user.id, session.user.email!);
+        return;
+      }
+
+      // 2. Fallback to Persistent Custom Session (Member Registry)
+      const savedUser = localStorage.getItem('sb_user_session');
+      if (savedUser) {
+        const cachedProfile = JSON.parse(savedUser);
+        
+        // Developer Bypass Recovery (Local Only)
+        if (cachedProfile.id === 'dev-001') {
+          if (environment.production === false) {
+            console.log('🔄 Restoring Developer Session...');
+            this.currentUserSubject.next(cachedProfile);
+          } else {
+            localStorage.removeItem('sb_user_session');
+          }
+          return;
+        }
+
+        // Member Registry Re-validation (Audit Secure)
+        console.log('🔄 Re-validating Member Session...');
+        const { data: member, error } = await this.supabase
+          .from('members')
+          .select('*')
+          .eq('id', cachedProfile.id)
+          .eq('status', 'Active')
+          .single();
+
+        if (member && !error) {
+          const permissions = await this.fetchPermissionsForRole(member.role);
+          this.currentUserSubject.next({
+            id: member.id,
+            email: member.email_id,
+            role: member.role,
+            fullName: member.name,
+            permissions: permissions
+          });
+        } else {
+          console.warn('Session invalid or user deactivated.');
+          localStorage.removeItem('sb_user_session');
+        }
       }
     } catch (err) {
       console.warn('Initial session check failed:', err);
@@ -63,8 +96,8 @@ export class AuthService {
   }
 
   async login(email: string, pass: string) {
-    // Developer Bypass for Local Testing
-    if (email === 'admin@gmail.com' && (pass === 'Admin@123' || pass === 'admin')) {
+    // Developer Bypass for Local Testing (Disabled in Production for Security)
+    if (environment.production === false && email === 'admin@gmail.com' && (pass === 'Admin@123' || pass === 'admin')) {
       console.log('🛡️ Developer Bypass Activated (Local Mode)');
       const profile: UserProfile = {
         id: 'dev-001',
@@ -74,7 +107,7 @@ export class AuthService {
         permissions: this.getAdminPermissions()
       };
       this.currentUserSubject.next(profile);
-      localStorage.setItem('sb_dev_user', JSON.stringify(profile));
+      localStorage.setItem('sb_user_session', JSON.stringify(profile));
       this._initializedResolver();
       return { session: { user: { id: 'dev-001' } } };
     }
@@ -115,7 +148,7 @@ export class AuthService {
     };
     
     this.currentUserSubject.next(profile);
-    localStorage.setItem('sb_dev_user', JSON.stringify(profile)); // Persistence for member session
+    localStorage.setItem('sb_user_session', JSON.stringify(profile)); // Persistence for member session
     this._initializedResolver();
     
     return { session: { user: { id: member.id } } };
@@ -218,7 +251,7 @@ export class AuthService {
   }
 
   async logout() {
-    localStorage.removeItem('sb_dev_user');
+    localStorage.removeItem('sb_user_session');
     await this.supabase.auth.signOut();
     this.currentUserSubject.next(null);
     this.router.navigate(['/login']);
