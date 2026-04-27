@@ -217,7 +217,7 @@ body {
 .btn-success { background: var(--success); color: white; }
 .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border-color: rgba(239,68,68,0.2); }
 
-.table { width: 100%; border-collapse: collapse; }
+.table { width: 100%; border-collapse: collapse; min-width: 600px; }
 .table th {
   text-align: left;
   padding: 12px 16px;
@@ -277,6 +277,11 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 
 /* Responsive Utilities */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 .show-on-mobile { display: none !important; }
 .hide-on-mobile { display: block !important; }
 

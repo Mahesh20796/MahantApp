@@ -160,8 +160,14 @@ import { Role } from '../../models/role.model';
       border: 1px solid var(--border-color);
       color: white;
     }
+    @media (max-width: 768px) {
+      .permission-matrix-container {
+        padding: 16px;
+      }
+    }
     .permission-table {
       width: 100%;
+      min-width: 500px;
       border-collapse: collapse;
     }
     .permission-table th {
