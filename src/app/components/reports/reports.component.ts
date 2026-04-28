@@ -181,11 +181,20 @@ import * as XLSX from 'xlsx';
              <h3 class="card-title" style="margin-bottom: 8px;">👤 Member Specific Audit</h3>
              <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 24px;">View precise payment timings and history for a specific member.</p>
              
+             <div class="form-group" style="margin-bottom: 12px;">
+                <label class="form-label">Organization (Optional)</label>
+                <select class="form-control" [(ngModel)]="selectedOrganization" (change)="onOrganizationChange()">
+                   <option [value]="null">-- Choose Organization --</option>
+                   <option [value]="'general'">Organization General</option>
+                   <option *ngFor="let m of getOrganizations()" [value]="m.id">{{ m.name }}</option>
+                </select>
+             </div>
+
              <div class="form-group" style="margin-bottom: 24px;">
-                <label class="form-label">Select Member</label>
-                <select class="form-control" [(ngModel)]="selectedMemberId" (change)="fetchMemberReport()">
+                <label class="form-label">Member Name (Optional)</label>
+                <select class="form-control" [(ngModel)]="selectedMember" (change)="onMemberChange()">
                    <option [value]="null">-- Choose Member --</option>
-                   <option *ngFor="let m of members" [value]="m.id">{{ m.name }}</option>
+                   <option *ngFor="let m of getRegularMembers()" [value]="m.id">{{ m.name }}</option>
                 </select>
              </div>
 
@@ -593,8 +602,34 @@ export class ReportsComponent implements OnInit {
 
   members: any[] = [];
   selectedMemberId: string | null = null;
+  selectedOrganization: string | null = null;
+  selectedMember: string | null = null;
   memberTransactions: any[] = [];
   memberTotalContributions: number = 0;
+
+  getOrganizations() {
+    return this.members.filter(m => m.role === 'Organization/Activity');
+  }
+
+  getRegularMembers() {
+    return this.members.filter(m => m.role !== 'Organization/Activity');
+  }
+
+  onOrganizationChange() {
+    if (this.selectedOrganization) {
+      this.selectedMember = null;
+    }
+    this.selectedMemberId = this.selectedOrganization;
+    this.fetchMemberReport();
+  }
+
+  onMemberChange() {
+    if (this.selectedMember) {
+      this.selectedOrganization = null;
+    }
+    this.selectedMemberId = this.selectedMember;
+    this.fetchMemberReport();
+  }
 
   leaderboardRange = {
     start: new Date(new Date().setDate(1)).toISOString().split('T')[0],
@@ -664,7 +699,12 @@ export class ReportsComponent implements OnInit {
      }
 
      const allTx = await this.supabase.getWalletTransactions();
-     this.memberTransactions = allTx.filter((t: any) => t.member_id === this.selectedMemberId);
+     
+     if (this.selectedMemberId === 'general') {
+       this.memberTransactions = allTx.filter((t: any) => !t.member_id);
+     } else {
+       this.memberTransactions = allTx.filter((t: any) => t.member_id === this.selectedMemberId);
+     }
      
      this.memberTotalContributions = this.memberTransactions
         .filter(t => t.type === 'deposit')
@@ -781,8 +821,13 @@ export class ReportsComponent implements OnInit {
       doc.save(`Rana_Mandal_Financial_${this.financialRange.start}.pdf`);
 
     } else if (type === 'member_report') {
-      const member = this.members.find(m => m.id === this.selectedMemberId);
-      doc.text(`Individual Financial Audit Profile: ${member?.name}`, 14, 45);
+      let profileName = 'Organization General';
+      if (this.selectedMemberId !== 'general') {
+        const member = this.members.find(m => m.id === this.selectedMemberId);
+        if (member) profileName = member.name;
+      }
+      
+      doc.text(`Individual Financial Audit Profile: ${profileName}`, 14, 45);
       doc.setFontSize(10);
       doc.text(`Total Authenticated Contributions: INR ${this.memberTotalContributions.toLocaleString()}`, 14, 52);
 
@@ -798,7 +843,7 @@ export class ReportsComponent implements OnInit {
         headStyles: { fillColor: [30, 58, 138] },
         didDrawPage: footer
       });
-      doc.save(`Rana_Mandal_Report_${member?.name.replace(/\s/g, '_')}.pdf`);
+      doc.save(`Rana_Mandal_Report_${profileName.replace(/\s/g, '_')}.pdf`);
     }
   }
 }

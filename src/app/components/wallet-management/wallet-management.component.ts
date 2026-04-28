@@ -52,25 +52,38 @@ import { SupabaseService } from '../../services/supabase.service';
         <button class="btn" (click)="closeForm()" style="background: transparent; color: var(--text-muted); font-weight: 800;">✕ Close</button>
       </div>
 
-      <div class="responsive-grid" style="grid-template-columns: 1fr 1.5fr 1fr 1fr 1.2fr; gap: 16px; align-items: flex-start;">
-        <div class="form-group">
+      <div class="responsive-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: flex-start; margin-bottom: 16px;">
+        <div class="form-group" style="margin: 0;">
           <label class="form-label">Transaction Date *</label>
           <input type="date" class="form-control" [class.is-invalid]="submitted && !newTransaction.date" [(ngModel)]="newTransaction.date">
           <div *ngIf="submitted && !newTransaction.date" class="invalid-feedback">Date required</div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Member (Optional)</label>
-          <select class="form-control" [(ngModel)]="newTransaction.member_id">
-            <option [value]="null">Organization General</option>
-            <option *ngFor="let m of members" [value]="m.id">{{ m.name }}</option>
+        <div class="form-group" style="margin: 0;">
+          <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+            Organization (Optional)
+            <a href="javascript:void(0)" (click)="openQuickAddMember()" style="font-size: 0.75rem; color: var(--primary); font-weight: 800; text-decoration: none;">+ Add Org / Activity</a>
+          </label>
+          <select class="form-control" [(ngModel)]="selectedOrganization" (change)="onOrganizationChange()">
+            <option [value]="'general'">Organization General</option>
+            <option *ngFor="let m of getOrganizations()" [value]="m.id">{{ m.name }}</option>
           </select>
         </div>
-        <div class="form-group">
+        <div class="form-group" style="margin: 0;">
+          <label class="form-label">Member Name (Optional)</label>
+          <select class="form-control" [(ngModel)]="selectedMember" (change)="onMemberChange()">
+            <option [value]="null">-- Select Member --</option>
+            <option *ngFor="let m of getRegularMembers()" [value]="m.id">{{ m.name }}</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="responsive-grid" style="grid-template-columns: 1fr 2fr 1fr; gap: 16px; align-items: flex-end;">
+        <div class="form-group" style="margin: 0;">
           <label class="form-label">Amount (INR) *</label>
           <input type="number" class="form-control" [class.is-invalid]="submitted && !newTransaction.amount" [(ngModel)]="newTransaction.amount" placeholder="0.00">
           <div *ngIf="submitted && !newTransaction.amount" class="invalid-feedback">Amount required</div>
         </div>
-        <div class="form-group">
+        <div class="form-group" style="margin: 0;">
           <label class="form-label">Purpose / Description *</label>
           <input type="text" class="form-control" [class.is-invalid]="submitted && !newTransaction.description" [(ngModel)]="newTransaction.description" placeholder="E.g. Rent, Donation">
           <div *ngIf="submitted && !newTransaction.description" class="invalid-feedback">Description required</div>
@@ -78,9 +91,30 @@ import { SupabaseService } from '../../services/supabase.service';
         <button class="btn" [ngClass]="transactionType === 'deposit' ? 'btn-success' : 'btn-danger'" 
                 (click)="processTransaction()" 
                 [disabled]="processing"
-                style="height: 48px; justify-content: center; font-weight: 800; width: 100%; margin-top: 28px;">
+                style="height: 48px; justify-content: center; font-weight: 800; width: 100%;">
           {{ processing ? 'Processing...' : (transactionType === 'deposit' ? 'Confirm Deposit' : 'Confirm Withdrawal') }}
         </button>
+      </div>
+    </div>
+
+    <!-- Quick Add Organization / Activity Modal -->
+    <div *ngIf="showQuickAddMember" class="modal-backdrop animate-fade-in" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px;">
+      <div class="card animate-slide-up" style="width: 100%; max-width: 400px; padding: 24px; background: var(--bg-card); box-shadow: var(--shadow-premium);">
+        <h3 style="margin-top: 0; margin-bottom: 20px; font-weight: 800;">➕ Add Organization / Activity</h3>
+        <div class="form-group">
+          <label class="form-label">Organization / Activity Name *</label>
+          <input type="text" class="form-control" [(ngModel)]="quickMember.name" placeholder="E.g. Annual Festival">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Activity Date</label>
+          <input type="date" class="form-control" [(ngModel)]="quickMember.activityDate">
+        </div>
+        <div style="display: flex; gap: 12px; margin-top: 28px;">
+          <button class="btn" style="flex: 1; background: var(--bg-main); color: var(--text-dark); justify-content: center;" (click)="closeQuickAddMember()">Cancel</button>
+          <button class="btn btn-primary" style="flex: 1; justify-content: center;" (click)="saveQuickMember()" [disabled]="quickMemberProcessing">
+            {{ quickMemberProcessing ? 'Saving...' : 'Save & Select' }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -159,6 +193,7 @@ import { SupabaseService } from '../../services/supabase.service';
     .table-row-hover:hover { background: var(--primary-soft); transition: background 0.2s; }
     .form-control.is-invalid { border-color: var(--danger); }
     .invalid-feedback { color: var(--danger); font-size: 0.7rem; font-weight: 700; margin-top: 4px; }
+    .dropdown-item:hover { background-color: var(--primary-soft); transition: background 0.2s; }
     
 
   `]
@@ -181,8 +216,47 @@ export class WalletManagementComponent implements OnInit {
   newTransaction: any = {
     amount: null,
     description: '',
-    member_id: null,
     date: new Date().toISOString().split('T')[0]
+  };
+
+  // Two separate selections
+  selectedOrganization: string | null = 'general';
+  selectedMember: string | null = null;
+
+  getOrganizations() {
+    return this.members.filter(m => m.role === 'Organization/Activity');
+  }
+
+  getRegularMembers() {
+    return this.members.filter(m => m.role !== 'Organization/Activity');
+  }
+
+  onOrganizationChange() {
+    if (this.selectedOrganization && this.selectedOrganization !== 'general') {
+      this.selectedMember = null;
+    }
+  }
+
+  onMemberChange() {
+    if (this.selectedMember) {
+      this.selectedOrganization = null;
+    }
+  }
+
+  getFinalMemberId() {
+    if (this.selectedMember) return this.selectedMember;
+    if (this.selectedOrganization && this.selectedOrganization !== 'general') return this.selectedOrganization;
+    return null; // Organization General
+  }
+
+  dropdownOpen = false;
+
+  // Quick Add Member State
+  showQuickAddMember = false;
+  quickMemberProcessing = false;
+  quickMember = {
+    name: '',
+    activityDate: new Date().toISOString().split('T')[0]
   };
 
   transactions: any[] = [];
@@ -214,10 +288,11 @@ export class WalletManagementComponent implements OnInit {
     this.transactionType = type;
     this.showTransactionForm = true;
     this.submitted = false;
+    this.selectedOrganization = 'general';
+    this.selectedMember = null;
     this.newTransaction = { 
       amount: null, 
       description: '', 
-      member_id: null,
       date: new Date().toISOString().split('T')[0]
     };
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -228,19 +303,81 @@ export class WalletManagementComponent implements OnInit {
     this.submitted = false;
   }
 
+  openQuickAddMember() {
+    this.quickMember = { 
+      name: '',
+      activityDate: new Date().toISOString().split('T')[0]
+    };
+    this.showQuickAddMember = true;
+  }
+
+  closeQuickAddMember() {
+    this.showQuickAddMember = false;
+  }
+
+  async saveQuickMember() {
+    if (!this.quickMember.name) {
+      alert('Please provide an Organization / Activity Name.');
+      return;
+    }
+
+    this.quickMemberProcessing = true;
+    try {
+      const payload = {
+        name: this.quickMember.name,
+        contact_details: '0000000000',
+        email_id: `org${Date.now()}@sabha.local`,
+        photo: '',
+        address: 'N/A',
+        role: 'Organization/Activity',
+        sabha_name: 'Organization General',
+        status: 'Active',
+        password: 'password123',
+        joining_date: this.quickMember.activityDate || null
+      };
+
+      const res = await this.supabase.addMember(payload);
+      if (res && res.error) throw res.error;
+
+      // Reload members list to include the newly created one
+      this.members = await this.supabase.getMembers();
+
+      // Find the new member ID and automatically select it
+      let newMemId = null;
+      if (res && res.data && res.data.length > 0) {
+        newMemId = res.data[0].id;
+      } else {
+        const match = this.members.find(m => m.name === this.quickMember.name && m.role === 'Organization/Activity');
+        if (match) newMemId = match.id;
+      }
+
+      if (newMemId) {
+        this.selectedOrganization = newMemId;
+        this.selectedMember = null;
+      }
+
+      this.closeQuickAddMember();
+    } catch (error: any) {
+      alert('Error creating organization: ' + (error.message || error));
+    } finally {
+      this.quickMemberProcessing = false;
+    }
+  }
+
   async processTransaction() {
     this.submitted = true;
     
     if (!this.newTransaction.amount || !this.newTransaction.description || !this.newTransaction.date) return;
 
     const amount = Number(this.newTransaction.amount);
+    const finalMemberId = this.getFinalMemberId();
 
     // Validation: Check for insufficient funds during withdrawal
     if (this.transactionType === 'withdrawal') {
       let availableBalance = this.stats.totalBalance; // Default to Org Balance
       
-      if (this.newTransaction.member_id) {
-        const member = this.members.find(m => m.id === this.newTransaction.member_id);
+      if (finalMemberId) {
+        const member = this.members.find(m => m.id === finalMemberId);
         availableBalance = member?.wallet_balance || 0;
       }
 
@@ -256,8 +393,8 @@ export class WalletManagementComponent implements OnInit {
         amount: amount,
         description: this.newTransaction.description,
         type: this.transactionType,
-        member_id: this.newTransaction.member_id,
-        category: this.newTransaction.member_id ? 'MEMBER_ACTION' : 'ORG_GENERAL',
+        member_id: finalMemberId,
+        category: finalMemberId ? 'MEMBER_ACTION' : 'ORG_GENERAL',
         status: 'COMPLETED',
         created_at: this.newTransaction.date
       };
