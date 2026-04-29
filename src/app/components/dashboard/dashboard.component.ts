@@ -141,7 +141,11 @@ Chart.register(...registerables);
     <button class="fab show-on-mobile animate-fade-in" (click)="loadStats()" 
             style="bottom: 100px; right: 24px; z-index: 100;"
             aria-label="Refresh Dashboard">
-      <s    .stat-card-premium {
+      <span style="font-size: 1.2rem;">🔄</span>
+    </button>
+  `,
+  styles: [`
+    .stat-card-premium {
        background: var(--bg-card);
        border: 1px solid var(--border-color);
        padding: 24px;
