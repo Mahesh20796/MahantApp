@@ -47,7 +47,7 @@ import { Role } from '../../models/role.model';
           <!-- Permission Matrix -->
           <div class="permission-matrix-container">
              <h4 style="margin-bottom: 16px; font-size: 1rem; font-weight: 800; color: #FFFFFF;">🔒 Module Permissions Matrix</h4>
-             <div class="table-responsive">
+             <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
                 <table class="permission-table">
                    <thead>
                       <tr>

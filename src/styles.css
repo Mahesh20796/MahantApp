@@ -395,3 +395,10 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   z-index: 1000;
   border: 4px solid var(--bg-card);
 }
+
+/* Utilities */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
