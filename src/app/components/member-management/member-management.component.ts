@@ -228,7 +228,8 @@ export class MemberManagementComponent implements OnInit {
   isLoading = false;
 
   get isAdmin() {
-    return this.auth.userRole === 'Admin' || this.auth.userRole === 'Sabha Sanchalak';
+    const role = this.auth.userRole?.trim() || '';
+    return role === 'Admin' || role.includes('Admin') || role.includes('Sanchalak');
   }
 
   get filteredMembers() {

@@ -270,7 +270,8 @@ export class AuthService {
     if (!profile) return false;
     
     // Super Admin check
-    if (profile.role === 'Admin' || profile.role === 'Sabha Sanchalak') return true;
+    const r = profile.role?.trim() || '';
+    if (r === 'Admin' || r.includes('Admin') || r.includes('Sanchalak')) return true;
     
     if (!profile.permissions || !profile.permissions[module]) return false;
     return profile.permissions[module][action];
