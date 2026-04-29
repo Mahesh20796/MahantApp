@@ -12,130 +12,126 @@ Chart.register(...registerables);
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="page-header animate-fade-in" style="margin-bottom: 32px; flex-direction: column; align-items: flex-start; gap: 16px;">
+    <div class="page-header animate-fade-in" style="margin-bottom: 24px;">
       <div>
-        <h1 style="font-weight: 800; color: var(--text-dark); letter-spacing: -0.04em; margin: 0; font-size: 1.8rem;">नमस्ते, {{ (auth.currentUser$ | async)?.fullName || 'Admin' }}! 👋</h1>
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; font-weight: 500;">Strategic Command Center • Sabha Intelligence Portal</p>
+        <h1 style="font-weight: 900; color: var(--text-dark); letter-spacing: -0.05em; margin: 0; font-size: 2.2rem; line-height: 1.1;">नमस्ते, {{ (auth.currentUser$ | async)?.fullName || 'Admin' }}! 👋</h1>
+        <p style="color: var(--text-muted); font-size: 1rem; margin-top: 8px; font-weight: 600; opacity: 0.8;">Sabha Intelligence Command Center</p>
       </div>
-      <div class="show-on-mobile" style="width: 100%;">
-         <button (click)="loadStats()" class="btn" style="width: 100%; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-dark); justify-content: center; font-weight: 700;">🔄 Refresh Insights</button>
+      <div class="hide-on-mobile">
+         <button (click)="loadStats()" class="btn btn-primary" style="padding: 12px 24px; border-radius: 14px; box-shadow: var(--shadow-sm);">🔄 Refresh Portal</button>
       </div>
+    </div>
+
+    <!-- QUICK ACTIONS MOBILE SCROLL -->
+    <div class="show-on-mobile animate-fade-in" style="margin-bottom: 24px;">
+       <div style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 12px; -webkit-overflow-scrolling: touch;">
+          <button (click)="router.navigate(['/attendance'])" class="quick-action-pill att-icon">📝 Attendance</button>
+          <button (click)="router.navigate(['/wallet'])" class="quick-action-pill wal-icon">💰 Wallet</button>
+          <button (click)="router.navigate(['/members'])" class="quick-action-pill mem-icon">👥 Members</button>
+       </div>
     </div>
 
     <div class="bento-grid animate-slide-up">
       
-      <!-- STATS ROW -->
-      <div class="bento-item col-4 stat-card">
-         <div class="stat-header">
-            <span class="stat-title">Total Membership</span>
-            <span class="stat-icon mem-icon">👥</span>
+      <!-- CORE STATS -->
+      <div class="bento-item col-4 stat-card-premium">
+         <div class="stat-top">
+            <div class="stat-icon-box mem-icon">👥</div>
+            <span class="stat-label">Total Membership</span>
          </div>
-         <div *ngIf="!isLoading" class="stat-value">{{ report?.memberCount }}</div>
-         <div *ngIf="isLoading" class="skeleton stat-skeleton"></div>
-         <div class="stat-footer success">↑ Active Community</div>
-      </div>
-
-      <div class="bento-item col-4 stat-card">
-         <div class="stat-header">
-            <span class="stat-title">Financial Balance</span>
-            <span class="stat-icon wal-icon">💰</span>
-         </div>
-         <div *ngIf="!isLoading" class="stat-value">₹{{ report?.totalBalance | number }}</div>
-         <div *ngIf="isLoading" class="skeleton stat-skeleton"></div>
-         <div class="stat-footer success">↑ Core Fund</div>
-      </div>
-
-      <div class="bento-item col-4 stat-card" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
-         <div style="padding: 24px 24px 0 24px;">
-            <div class="stat-header">
-               <span class="stat-title">Last Sabha: {{ lastSabha?.title || 'Loading...' }}</span>
-               <span class="stat-icon att-icon">📊</span>
-            </div>
-         </div>
-         <div *ngIf="lastSabha" style="display: flex; flex: 1; margin-top: 16px;">
-            <div class="attendance-stat present">
-               <div class="val">{{ lastSabha.present }}</div>
-               <div class="lbl">Present</div>
-            </div>
-            <div class="attendance-stat absent">
-               <div class="val">{{ lastSabha.absent }}</div>
-               <div class="lbl">Absent</div>
-            </div>
-            <div class="attendance-stat leave">
-               <div class="val">{{ lastSabha.leave }}</div>
-               <div class="lbl">Leave</div>
-            </div>
-         </div>
-         <div *ngIf="isLoading" class="skeleton" style="height: 100%; margin: 16px 24px 24px;"></div>
-      </div>
-
-      <!-- MODULE NAVIGATION HUB -->
-      <div style="grid-column: span 12; margin-top: 12px;">
-         <div class="form-label" style="margin-bottom: 20px; font-size: 1.2rem; color: var(--text-dark);">🚀 Operations Command Center</div>
-         <div class="module-grid">
-            <button (click)="router.navigate(['/members'])" class="module-card">
-               <div class="module-icon mem-icon">👥</div>
-               <div class="module-info">
-                  <div class="title">Member Registry</div>
-                  <div class="sub">Manage profiles & details</div>
-               </div>
-               <div class="go-arrow">→</div>
-            </button>
-            <button (click)="router.navigate(['/attendance'])" class="module-card">
-               <div class="module-icon att-icon">📝</div>
-               <div class="module-info">
-                  <div class="title">Attendance Tracker</div>
-                  <div class="sub">Record live presence</div>
-               </div>
-               <div class="go-arrow">→</div>
-            </button>
-            <button (click)="router.navigate(['/schedule'])" class="module-card">
-               <div class="module-icon sch-icon">📅</div>
-               <div class="module-info">
-                  <div class="title">Sabha Scheduler</div>
-                  <div class="sub">Plan upcoming events</div>
-               </div>
-               <div class="go-arrow">→</div>
-            </button>
-            <button (click)="router.navigate(['/wallet'])" class="module-card">
-               <div class="module-icon wal-icon">💰</div>
-               <div class="module-info">
-                  <div class="title">Wallet & Financials</div>
-                  <div class="sub">Manage organization funds</div>
-               </div>
-               <div class="go-arrow">→</div>
-            </button>
-            <button (click)="router.navigate(['/reports'])" class="module-card">
-               <div class="module-icon rep-icon">📊</div>
-               <div class="module-info">
-                  <div class="title">System Reports</div>
-                  <div class="sub">Generate analytical audits</div>
-               </div>
-               <div class="go-arrow">→</div>
-            </button>
-            <button (click)="router.navigate(['/roles'])" class="module-card">
-               <div class="module-icon rol-icon">🛡️</div>
-               <div class="module-info">
-                  <div class="title">Security & Roles</div>
-                  <div class="sub">Access control matrix</div>
-               </div>
-               <div class="go-arrow">→</div>
-            </button>
+         <div class="stat-main">
+            <div *ngIf="!isLoading" class="stat-number">{{ report?.memberCount }}</div>
+            <div *ngIf="isLoading" class="skeleton" style="height: 48px; width: 100px; border-radius: 12px;"></div>
+            <div class="stat-trend success">Active Community</div>
          </div>
       </div>
 
-      <!-- CHARTS -->
-      <div class="bento-item col-6 row-2" style="margin-top: 12px;">
-         <div class="form-label" style="margin-bottom: 24px; font-size: 1.1rem;">📈 Weekly Attendance Trends</div>
-         <div style="height: 280px; position: relative;">
+      <div class="bento-item col-4 stat-card-premium">
+         <div class="stat-top">
+            <div class="stat-icon-box wal-icon">💰</div>
+            <span class="stat-label">Core Balance</span>
+         </div>
+         <div class="stat-main">
+            <div *ngIf="!isLoading" class="stat-number">₹{{ report?.totalBalance | number }}</div>
+            <div *ngIf="isLoading" class="skeleton" style="height: 48px; width: 150px; border-radius: 12px;"></div>
+            <div class="stat-trend success">Organization Fund</div>
+         </div>
+      </div>
+
+      <div class="bento-item col-4 stat-card-premium last-sabha-special">
+         <div class="stat-top">
+            <div class="stat-icon-box att-icon">📊</div>
+            <span class="stat-label">Last Sabha: {{ lastSabha?.title || 'Wait...' }}</span>
+         </div>
+         <div *ngIf="lastSabha" class="attendance-mini-grid">
+            <div class="mini-att present">
+               <span class="v">{{ lastSabha.present }}</span>
+               <span class="l">Pres</span>
+            </div>
+            <div class="mini-att absent">
+               <span class="v">{{ lastSabha.absent }}</span>
+               <span class="l">Abs</span>
+            </div>
+            <div class="mini-att leave">
+               <span class="v">{{ lastSabha.leave }}</span>
+               <span class="l">Leav</span>
+            </div>
+         </div>
+         <div *ngIf="isLoading" class="skeleton" style="height: 60px; width: 100%; border-radius: 12px; margin-top: 12px;"></div>
+      </div>
+
+      <!-- ANALYTICS PREVIEWS -->
+      <div class="bento-item col-6 chart-item">
+         <div class="chart-header">
+            <h3 class="chart-title">📊 Attendance Trends</h3>
+            <span class="chart-sub">Weekly Performance</span>
+         </div>
+         <div class="chart-container">
             <canvas #attendanceChart></canvas>
          </div>
       </div>
 
-      <div class="bento-item col-6 row-2" style="margin-top: 12px;">
-         <div class="form-label" style="margin-bottom: 24px; font-size: 1.1rem;">💵 Financial Growth History</div>
-         <div style="height: 280px; position: relative;">
+      <div class="bento-item col-6 chart-item">
+         <div class="chart-header">
+            <h3 class="chart-title">💳 Financial Growth</h3>
+            <span class="chart-sub">Wallet Accumulation</span>
+         </div>
+         <div class="chart-container">
             <canvas #financeChart></canvas>
+         </div>
+      </div>
+
+      <!-- OPERATIONS HUB -->
+      <div class="bento-item col-12 operations-hub">
+         <div class="hub-header">
+            <h2 class="hub-title">⚡ Navigation Command</h2>
+            <p class="hub-sub">Access system modules instantly</p>
+         </div>
+         <div class="module-grid-modern">
+            <button (click)="router.navigate(['/members'])" class="nav-module mem-bg">
+               <div class="nav-icon">👥</div>
+               <div class="nav-text">Registry</div>
+            </button>
+            <button (click)="router.navigate(['/attendance'])" class="nav-module att-bg">
+               <div class="nav-icon">📝</div>
+               <div class="nav-text">Presence</div>
+            </button>
+            <button (click)="router.navigate(['/schedule'])" class="nav-module sch-bg">
+               <div class="nav-icon">📅</div>
+               <div class="nav-text">Schedule</div>
+            </button>
+            <button (click)="router.navigate(['/wallet'])" class="nav-module wal-bg">
+               <div class="nav-icon">💰</div>
+               <div class="nav-text">Wallet</div>
+            </button>
+            <button (click)="router.navigate(['/reports'])" class="nav-module rep-bg">
+               <div class="nav-icon">📈</div>
+               <div class="nav-text">Audit</div>
+            </button>
+            <button (click)="router.navigate(['/roles'])" class="nav-module rol-bg">
+               <div class="nav-icon">🛡️</div>
+               <div class="nav-text">Security</div>
+            </button>
          </div>
       </div>
 
@@ -145,163 +141,119 @@ Chart.register(...registerables);
     <button class="fab show-on-mobile animate-fade-in" (click)="loadStats()" 
             style="bottom: 100px; right: 24px; z-index: 100;"
             aria-label="Refresh Dashboard">
-      <span style="font-size: 1.2rem;">🔄</span>
-    </button>
-  `,
-  styles: [`
-    .stat-card {
-       display: flex;
-       flex-direction: column;
-       justify-content: space-between;
-    }
-    .stat-header {
-       display: flex;
-       justify-content: space-between;
-       align-items: flex-start;
-       margin-bottom: 12px;
-    }
-    .stat-title {
-       font-size: 0.9rem;
-       font-weight: 800;
-       color: var(--text-muted);
-       text-transform: uppercase;
-       letter-spacing: 0.05em;
-    }
-    .stat-icon {
-       width: 40px;
-       height: 40px;
-       border-radius: 12px;
-       display: flex;
-       align-items: center;
-       justify-content: center;
-       font-size: 1.2rem;
-    }
-    .stat-value {
-       font-size: 3rem;
-       font-weight: 900;
-       color: var(--text-dark);
-       letter-spacing: -0.03em;
-       line-height: 1;
-    }
-    .stat-skeleton {
-       height: 48px;
-       width: 60%;
-       border-radius: 8px;
-    }
-    .stat-footer {
-       margin-top: 16px;
-       font-size: 0.8rem;
-       font-weight: 700;
-    }
-    .stat-footer.success { color: var(--success); }
-
-    .attendance-stat {
-       flex: 1;
-       display: flex;
-       flex-direction: column;
-       align-items: center;
-       justify-content: center;
-       padding: 16px;
-       background: var(--bg-main);
-       border-top: 1px solid var(--border-color);
-    }
-    .attendance-stat:not(:last-child) {
-       border-right: 1px solid var(--border-color);
-    }
-    .attendance-stat .val { font-size: 1.5rem; font-weight: 900; margin-bottom: 4px; }
-    .attendance-stat .lbl { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
-    .attendance-stat.present .val { color: var(--success); }
-    .attendance-stat.absent .val { color: var(--danger); }
-    .attendance-stat.leave .val { color: var(--warning); }
-
-    .module-grid {
-       display: grid;
-       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-       gap: 20px;
-    }
-    .module-card {
+      <s    .stat-card-premium {
        background: var(--bg-card);
        border: 1px solid var(--border-color);
-       border-radius: 20px;
-       padding: 20px;
+       padding: 24px;
+       border-radius: 28px;
        display: flex;
-       align-items: center;
-       gap: 16px;
-       cursor: pointer;
-       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-       text-align: left;
-       position: relative;
-       overflow: hidden;
+       flex-direction: column;
+       justify-content: space-between;
+       transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+       box-shadow: var(--shadow-sm);
     }
-    .module-card:hover {
-       transform: translateY(-4px);
-       box-shadow: 0 12px 24px rgba(0,0,0,0.06);
-       border-color: var(--primary);
-    }
-    .dark-theme .module-card:hover {
-       box-shadow: 0 12px 24px rgba(0,0,0,0.3);
-    }
-    .module-card::after {
-       content: '';
-       position: absolute;
-       top: 0; left: 0; right: 0; bottom: 0;
-       background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
-       opacity: 0;
-       transition: opacity 0.3s;
-    }
-    .module-card:hover::after { opacity: 1; }
+    .stat-card-premium:hover { transform: translateY(-6px); border-color: var(--primary); }
     
-    .module-icon {
-       width: 56px;
-       height: 56px;
-       border-radius: 16px;
-       display: flex;
-       align-items: center;
-       justify-content: center;
-       font-size: 1.8rem;
-       flex-shrink: 0;
+    .stat-top { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .stat-icon-box {
+       width: 44px; height: 44px; border-radius: 12px;
+       display: flex; align-items: center; justify-content: center;
+       font-size: 1.2rem; flex-shrink: 0;
     }
-    .mem-icon { background: rgba(59, 130, 246, 0.1); color: #3B82F6; }
-    .att-icon { background: rgba(16, 185, 129, 0.1); color: #10B981; }
-    .sch-icon { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
-    .wal-icon { background: rgba(239, 68, 68, 0.1); color: #EF4444; }
-    .rep-icon { background: rgba(139, 92, 246, 0.1); color: #8B5CF6; }
-    .rol-icon { background: rgba(107, 114, 128, 0.1); color: #6B7280; }
+    .stat-label { font-size: 0.85rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-main { display: flex; flex-direction: column; gap: 8px; }
+    .stat-number { font-size: 2.8rem; font-weight: 900; color: var(--text-dark); letter-spacing: -0.04em; line-height: 1; }
+    .stat-trend { font-size: 0.75rem; font-weight: 800; margin-top: 4px; }
+    .stat-trend.success { color: var(--success); }
 
-    .module-info { flex: 1; }
-    .module-info .title { font-weight: 800; font-size: 1.1rem; color: var(--text-dark); margin-bottom: 4px; }
-    .module-info .sub { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
-    
-    .go-arrow {
-       font-size: 1.2rem;
-       color: var(--text-muted);
-       opacity: 0.5;
+    .attendance-mini-grid {
+       display: grid;
+       grid-template-columns: repeat(3, 1fr);
+       gap: 8px;
+       margin-top: auto;
+    }
+    .mini-att {
+       padding: 10px;
+       border-radius: 14px;
+       display: flex;
+       flex-direction: column;
+       align-items: center;
+       background: var(--bg-main);
+       border: 1px solid var(--border-color);
+    }
+    .mini-att .v { font-size: 1.2rem; font-weight: 900; }
+    .mini-att .l { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; opacity: 0.7; }
+    .mini-att.present .v { color: var(--success); }
+    .mini-att.absent .v { color: var(--danger); }
+    .mini-att.leave .v { color: var(--warning); }
+
+    .chart-item { padding: 24px; border-radius: 28px; background: var(--bg-card); border: 1px solid var(--border-color); }
+    .chart-header { margin-bottom: 20px; }
+    .chart-title { font-size: 1.1rem; font-weight: 800; color: var(--text-dark); margin: 0; }
+    .chart-sub { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
+    .chart-container { height: 260px; position: relative; }
+
+    .operations-hub { padding: 32px; border-radius: 32px; background: var(--bg-card); border: 1px solid var(--border-color); margin-top: 12px; }
+    .hub-header { margin-bottom: 24px; }
+    .hub-title { font-size: 1.4rem; font-weight: 900; color: var(--text-dark); margin: 0; }
+    .hub-sub { font-size: 0.9rem; color: var(--text-muted); font-weight: 600; }
+
+    .module-grid-modern {
+       display: grid;
+       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+       gap: 16px;
+    }
+    .nav-module {
+       padding: 20px;
+       border-radius: 20px;
+       border: 1px solid var(--border-color);
+       background: var(--bg-main);
+       display: flex;
+       flex-direction: column;
+       align-items: center;
+       gap: 12px;
+       cursor: pointer;
        transition: all 0.3s;
-       transform: translateX(-10px);
+       text-align: center;
     }
-    .module-card:hover .go-arrow {
-       opacity: 1;
-       transform: translateX(0);
-       color: var(--primary);
+    .nav-module:hover { transform: scale(1.05); border-color: var(--primary); box-shadow: var(--shadow-sm); }
+    .nav-icon { font-size: 1.8rem; }
+    .nav-text { font-size: 0.85rem; font-weight: 800; color: var(--text-dark); }
+
+    .quick-action-pill {
+       padding: 10px 20px;
+       border-radius: 24px;
+       font-size: 0.85rem;
+       font-weight: 800;
+       border: 1px solid var(--border-color);
+       background: var(--bg-card);
+       color: var(--text-dark);
+       white-space: nowrap;
+       display: flex;
+       align-items: center;
+       gap: 8px;
     }
-    
+
+    .mem-icon, .mem-bg { background: rgba(59, 130, 246, 0.1); color: #3B82F6; }
+    .att-icon, .att-bg { background: rgba(16, 185, 129, 0.1); color: #10B981; }
+    .wal-icon, .wal-bg { background: rgba(239, 68, 68, 0.1); color: #EF4444; }
+    .sch-icon, .sch-bg { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
+    .rep-icon, .rep-bg { background: rgba(139, 92, 246, 0.1); color: #8B5CF6; }
+    .rol-icon, .rol-bg { background: rgba(107, 114, 128, 0.1); color: #6B7280; }
+
     @media (max-width: 768px) {
-       .module-grid {
-          grid-template-columns: 1fr;
-          gap: 12px;
-       }
-       .module-card {
-          padding: 16px;
-          border-radius: 16px;
-       }
-       .module-icon {
-          width: 48px;
-          height: 48px;
-          font-size: 1.5rem;
-       }
-       .module-info .title { font-size: 1rem; }
-       .module-info .sub { font-size: 0.75rem; }
-       .stat-value { font-size: 2.2rem; }
+       .bento-grid { gap: 16px; }
+       .stat-number { font-size: 2.2rem; }
+       .operations-hub { padding: 24px; }
+       .module-grid-modern { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+       .nav-module { padding: 14px; border-radius: 16px; }
+       .nav-icon { font-size: 1.4rem; }
+       .nav-text { font-size: 0.7rem; }
+       .chart-container { height: 220px; }
+       .page-header h1 { font-size: 1.8rem; }
+    }
+    @media (max-width: 480px) {
+       .module-grid-modern { grid-template-columns: repeat(2, 1fr); }
     }
   `]
 })
