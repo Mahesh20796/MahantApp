@@ -393,11 +393,11 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 /* Floating Action Button (FAB) */
 .fab {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  right: 20px;
   width: 56px;
   height: 56px;
-  border-radius: 28px;
+  border-radius: 18px;
   background: var(--primary);
   color: white;
   display: flex;
@@ -406,7 +406,10 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   box-shadow: var(--shadow-md);
   z-index: 1000;
   border: 4px solid var(--bg-card);
+  cursor: pointer;
+  transition: transform 0.2s;
 }
+.fab:active { transform: scale(0.9); }
 
 /* Utilities */
 .table-responsive {

@@ -184,25 +184,34 @@ import { SupabaseService } from '../../services/supabase.service';
 
       <!-- Mobile card layout for Wallet -->
       <div class="show-on-mobile" *ngIf="!loading">
-        <div class="mobile-card-list" style="display: flex; flex-direction: column; gap: 16px;">
-          <div *ngFor="let t of transactions" class="mobile-card" style="border: 1px solid var(--border-color); background: var(--bg-card); border-radius: 20px; padding: 18px; box-shadow: var(--shadow-sm);">
-            <div class="mobile-card-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+        <div class="mobile-card-list" style="display: flex; flex-direction: column; gap: 14px; padding-bottom: 24px;">
+          <div *ngFor="let t of transactions" class="mobile-card" 
+               style="border: 1px solid var(--border-color); background: var(--bg-card); border-radius: 20px; padding: 18px; box-shadow: var(--shadow-sm); transition: all 0.2s;">
+            <div class="mobile-card-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
                <div style="flex: 1;">
-                  <div style="font-weight: 800; color: var(--text-dark); font-size: 0.95rem; margin-bottom: 2px;">{{ t.description }}</div>
-                  <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">📅 {{ t.date | date:'dd MMM yyyy' | uppercase }}</div>
+                  <div style="font-weight: 800; color: var(--text-dark); font-size: 1rem; margin-bottom: 2px; letter-spacing: -0.01em;">{{ t.description }}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">📅 {{ t.date | date:'dd MMM yyyy' }}</div>
                </div>
                <div style="text-align: right;">
-                  <div [style.color]="t.type === 'deposit' ? 'var(--success)' : 'var(--danger)'" style="font-weight: 900; font-size: 1.1rem;">
+                  <div [style.color]="t.type === 'deposit' ? 'var(--success)' : 'var(--danger)'" style="font-weight: 900; font-size: 1.15rem; letter-spacing: -0.02em;">
                     {{ t.type === 'deposit' ? '+' : '-' }} ₹{{ t.amount | number:'1.0-0' }}
                   </div>
-                  <span class="badge" style="font-size: 0.6rem; padding: 2px 6px; margin-top: 4px;">{{ t.status || 'COMPLETED' }}</span>
+                  <span class="badge" 
+                        [style.background]="t.type === 'deposit' ? '#DCFCE7' : '#FEE2E2'"
+                        [style.color]="t.type === 'deposit' ? '#166534' : '#991B1B'"
+                        style="font-size: 0.6rem; padding: 4px 8px; border-radius: 6px; margin-top: 6px; border: 1px solid currentColor;">
+                    {{ t.type | uppercase }}
+                  </span>
                </div>
             </div>
             
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 12px;">
-               <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700;">REF: {{ t.reference }}</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 14px; margin-top: 14px;">
+               <div>
+                 <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 800; display: block;">REFERENCE ID</span>
+                 <span style="font-size: 0.7rem; color: var(--text-dark); font-weight: 700;">{{ t.reference || 'N/A' }}</span>
+               </div>
                <button class="btn" (click)="deleteTransaction(t.id)" [disabled]="processing" 
-                       style="background: #fff5f5; color: var(--danger); border: 1px solid #ffe3e3; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem;">
+                       style="background: #FFF5F5; color: #EF4444; border: 1px solid #FEE2E2; padding: 8px 14px; border-radius: 10px; font-size: 0.75rem; font-weight: 800; display: flex; align-items: center; gap: 6px;">
                   🗑️ REMOVE
                </button>
             </div>

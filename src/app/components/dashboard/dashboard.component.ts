@@ -12,13 +12,13 @@ Chart.register(...registerables);
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="page-header animate-fade-in" style="margin-bottom: 32px;">
+    <div class="page-header animate-fade-in" style="margin-bottom: 32px; flex-direction: column; align-items: flex-start; gap: 16px;">
       <div>
-        <h1 style="font-weight: 800; color: var(--text-dark); letter-spacing: -0.04em; margin: 0;">नमस्ते, {{ (auth.currentUser$ | async)?.fullName || 'Admin' }}! 👋</h1>
-        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 4px;">Strategic Command • Sabha Intelligence Portal</p>
+        <h1 style="font-weight: 800; color: var(--text-dark); letter-spacing: -0.04em; margin: 0; font-size: 1.8rem;">नमस्ते, {{ (auth.currentUser$ | async)?.fullName || 'Admin' }}! 👋</h1>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; font-weight: 500;">Strategic Command Center • Sabha Intelligence Portal</p>
       </div>
-      <div class="hide-on-mobile" style="display: flex; gap: 12px;">
-         <button (click)="loadStats()" class="btn" style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-dark);">🔄 Refresh Insights</button>
+      <div class="show-on-mobile" style="width: 100%;">
+         <button (click)="loadStats()" class="btn" style="width: 100%; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-dark); justify-content: center; font-weight: 700;">🔄 Refresh Insights</button>
       </div>
     </div>
 
@@ -142,7 +142,9 @@ Chart.register(...registerables);
     </div>
 
     <!-- Mobile refresh FAB -->
-    <button class="fab show-on-mobile animate-fade-in" (click)="loadStats()" aria-label="Refresh Dashboard">
+    <button class="fab show-on-mobile animate-fade-in" (click)="loadStats()" 
+            style="bottom: 100px; right: 24px; z-index: 100;"
+            aria-label="Refresh Dashboard">
       <span style="font-size: 1.2rem;">🔄</span>
     </button>
   `,
@@ -281,6 +283,25 @@ Chart.register(...registerables);
        opacity: 1;
        transform: translateX(0);
        color: var(--primary);
+    }
+    
+    @media (max-width: 768px) {
+       .module-grid {
+          grid-template-columns: 1fr;
+          gap: 12px;
+       }
+       .module-card {
+          padding: 16px;
+          border-radius: 16px;
+       }
+       .module-icon {
+          width: 48px;
+          height: 48px;
+          font-size: 1.5rem;
+       }
+       .module-info .title { font-size: 1rem; }
+       .module-info .sub { font-size: 0.75rem; }
+       .stat-value { font-size: 2.2rem; }
     }
   `]
 })

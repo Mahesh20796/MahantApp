@@ -136,16 +136,22 @@ import { Role } from '../../models/role.model';
 
       <!-- Mobile View -->
       <div class="show-on-mobile">
-        <div class="mobile-card-list">
-          <div *ngFor="let r of roles" class="mobile-card" style="border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); padding: 20px; border-radius: 20px; margin-bottom: 16px;">
-            <div class="mobile-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-               <div style="font-weight: 800; color: var(--text-dark); font-size: 1.1rem;">{{r.name}}</div>
-               <span class="badge" [style.background]="getRoleColor(r.name, 0.1)" [style.color]="getRoleColor(r.name)">{{ (r.name.includes('Admin') || r.name.includes('Sanchalak') ? 'Super Admin' : 'Staff') | uppercase }}</span>
+        <div class="mobile-card-list" style="display: flex; flex-direction: column; gap: 16px; padding: 4px; padding-bottom: 32px;">
+          <div *ngFor="let r of roles" class="mobile-card" 
+               style="border: 1px solid var(--border-color); background: var(--bg-card); box-shadow: var(--shadow-sm); padding: 22px; border-radius: 24px; transition: all 0.2s;">
+            <div class="mobile-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+               <div style="font-weight: 800; color: var(--text-dark); font-size: 1.15rem; letter-spacing: -0.02em;">{{r.name}}</div>
+               <span class="badge" 
+                     [style.background]="getRoleColor(r.name, 0.1)" 
+                     [style.color]="getRoleColor(r.name)"
+                     style="font-size: 0.65rem; padding: 4px 10px; border-radius: 8px; border: 1px solid currentColor; font-weight: 800;">
+                 {{ (r.name.includes('Admin') || r.name.includes('Sanchalak') ? 'Super Admin' : 'Staff') | uppercase }}
+               </span>
             </div>
-            <p style="font-size: 0.9rem; color: var(--text-muted); margin: 8px 0 16px; font-weight: 500; line-height: 1.4;">{{ r.description }}</p>
-            <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 16px;">
-               <button class="btn" style="flex: 1; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-dark); padding: 10px; border-radius: 10px; justify-content: center;" (click)="editRole(r)">Edit</button>
-               <button class="btn" style="flex: 1; background: #fff5f5; border: 1px solid #ffe3e3; color: var(--danger); padding: 10px; border-radius: 10px; justify-content: center;" (click)="deleteRole(r.id)">Delete</button>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 8px 0 20px; font-weight: 600; line-height: 1.6; min-height: 48px;">{{ r.description }}</p>
+            <div style="display: flex; gap: 12px; border-top: 1px solid var(--border-color); padding-top: 18px;">
+               <button class="btn" style="flex: 1; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-dark); padding: 12px; border-radius: 14px; justify-content: center; font-weight: 800; font-size: 0.9rem;" (click)="editRole(r)">✏️ EDIT</button>
+               <button class="btn" style="flex: 1; background: #FFF5F5; border: 1px solid #FEE2E2; color: #EF4444; padding: 12px; border-radius: 14px; justify-content: center; font-weight: 800; font-size: 0.9rem;" (click)="deleteRole(r.id)">🗑️ DELETE</button>
             </div>
           </div>
         </div>
