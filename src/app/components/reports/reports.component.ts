@@ -22,6 +22,7 @@ import * as XLSX from 'xlsx';
         <div class="segmented-control">
           <button [class.active]="activePart === 'attendance'" (click)="setPart('attendance')">📋 Attendance</button>
           <button [class.active]="activePart === 'financial'" (click)="setPart('financial')">💰 Financial</button>
+          <button [class.active]="activePart === 'general'" (click)="setPart('general')">👥 General</button>
         </div>
       </div>
     </div>
@@ -34,6 +35,13 @@ import * as XLSX from 'xlsx';
           <h3 class="card-title" style="margin-bottom: 20px;">📅 Custom Range Report</h3>
           <div class="filter-row">
             <div style="flex: 1;">
+              <label class="form-label">Member Filter</label>
+              <select class="form-control" [(ngModel)]="attendanceSelectedMember">
+                 <option [value]="null">All Members</option>
+                 <option *ngFor="let m of getRegularMembers()" [value]="m.id">{{ m.name }}</option>
+              </select>
+            </div>
+            <div style="flex: 1;">
               <label class="form-label">Start Date</label>
               <input type="date" class="form-control" [(ngModel)]="attendanceRange.start">
             </div>
@@ -45,18 +53,31 @@ import * as XLSX from 'xlsx';
           </div>
 
           <!-- P/L/A Summary -->
-          <div *ngIf="attendanceSummary" class="summary-grid">
-            <div class="summary-item present">
-              <span class="label">PRESENT (P)</span>
-              <span class="value">{{ attendanceSummary.P }}</span>
+          <div *ngIf="attendanceSummary" style="margin-bottom: 24px;">
+            <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+               <div class="mini-stat-card transparent" style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; background: var(--bg-main);">
+                  <span class="mini-label" style="display: block;">Total Attendance</span>
+                  <span class="mini-value success">{{ attendanceSummary.P }}</span>
+               </div>
+               <div class="mini-stat-card transparent" style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; background: var(--bg-main);">
+                  <span class="mini-label" style="display: block;">Outstanding / Missed</span>
+                  <span class="mini-value danger">{{ attendanceSummary.A + attendanceSummary.L }}</span>
+               </div>
             </div>
-            <div class="summary-item absent">
-              <span class="label">ABSENT (A)</span>
-              <span class="value">{{ attendanceSummary.A }}</span>
-            </div>
-            <div class="summary-item leave">
-              <span class="label">LEAVE (L)</span>
-              <span class="value">{{ attendanceSummary.L }}</span>
+
+            <div class="summary-grid" style="margin-top: 0;">
+              <div class="summary-item present">
+                <span class="label">PRESENT (P)</span>
+                <span class="value">{{ attendanceSummary.P }}</span>
+              </div>
+              <div class="summary-item absent">
+                <span class="label">ABSENT (A)</span>
+                <span class="value">{{ attendanceSummary.A }}</span>
+              </div>
+              <div class="summary-item leave">
+                <span class="label">LEAVE (L)</span>
+                <span class="value">{{ attendanceSummary.L }}</span>
+              </div>
             </div>
           </div>
 
@@ -176,29 +197,67 @@ import * as XLSX from 'xlsx';
              </div>
           </div>
 
-          <!-- Member Wise Card -->
+          <!-- Activity-wise Report Card -->
           <div class="card">
-             <h3 class="card-title" style="margin-bottom: 8px;">👤 Member Specific Audit</h3>
-             <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 24px;">View precise payment timings and history for a specific member.</p>
+             <h3 class="card-title" style="margin-bottom: 8px;">🏢 Activity-wise Report</h3>
+             <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 24px;">View historical collections and expenses for a specific activity or organization.</p>
              
-             <div class="form-group" style="margin-bottom: 12px;">
-                <label class="form-label">Organization (Optional)</label>
-                <select class="form-control" [(ngModel)]="selectedOrganization" (change)="onOrganizationChange()">
-                   <option [value]="null">-- Choose Organization --</option>
+             <div class="form-group" style="margin-bottom: 24px;">
+                <label class="form-label">Select Activity / Organization</label>
+                <select class="form-control" [(ngModel)]="selectedOrganization" (change)="fetchOrganizationReport()">
+                   <option [value]="null">-- Choose Activity --</option>
                    <option [value]="'general'">Organization General</option>
                    <option *ngFor="let m of getOrganizations()" [value]="m.id">{{ m.name }}</option>
                 </select>
              </div>
 
+             <div *ngIf="selectedOrganization && orgTransactions.length > 0" class="member-history-container">
+                <div class="member-summary-box">
+                   <div>
+                      <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Activity Deposits</div>
+                      <div style="font-size: 1.4rem; font-weight: 900; color: var(--success);">₹{{ orgTotalContributions | number:'1.0-0' }}</div>
+                   </div>
+                   <button class="btn btn-primary" (click)="exportToPDF('org_report')" style="height: 38px; padding: 0 16px; font-size: 0.75rem;">Download Report</button>
+                </div>
+
+                <div class="transaction-timeline">
+                   <div *ngFor="let tx of orgTransactions.slice(0, 5)" class="timeline-item">
+                      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px;">
+                         <span style="font-weight: 800; font-size: 0.85rem; color: var(--text-dark);">{{ tx.description }}</span>
+                         <span [class]="tx.type === 'deposit' ? 'text-success' : 'text-danger'" style="font-weight: 800;">
+                            {{ tx.type === 'deposit' ? '+' : '-' }} ₹{{ tx.amount }}
+                         </span>
+                      </div>
+                      <div style="font-size: 0.7rem; color: var(--text-muted);">
+                         📅 {{ tx.date | date:'dd MMM yyyy' }}
+                      </div>
+                   </div>
+                   <div *ngIf="orgTransactions.length > 5" style="text-align: center; font-size: 0.7rem; color: var(--text-muted); font-weight: 700; margin-top: 12px; cursor: pointer;">
+                      + VIEW ALL {{ orgTransactions.length }} RECORDS
+                   </div>
+                </div>
+             </div>
+
+             <div *ngIf="selectedOrganization && orgTransactions.length === 0" style="padding: 40px; text-align: center;">
+                <div style="font-size: 2rem; opacity: 0.5;">🔍</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 12px;">No historical data found for this activity.</div>
+             </div>
+          </div>
+
+          <!-- Member Wise Card -->
+          <div class="card">
+             <h3 class="card-title" style="margin-bottom: 8px;">👤 Member-wise Report</h3>
+             <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 24px;">View precise payment timings and history for a specific member.</p>
+             
              <div class="form-group" style="margin-bottom: 24px;">
-                <label class="form-label">Member Name (Optional)</label>
-                <select class="form-control" [(ngModel)]="selectedMember" (change)="onMemberChange()">
+                <label class="form-label">Select Member Name</label>
+                <select class="form-control" [(ngModel)]="selectedMember" (change)="fetchMemberReport()">
                    <option [value]="null">-- Choose Member --</option>
                    <option *ngFor="let m of getRegularMembers()" [value]="m.id">{{ m.name }}</option>
                 </select>
              </div>
 
-             <div *ngIf="selectedMemberId && memberTransactions.length > 0" class="member-history-container">
+             <div *ngIf="selectedMember && memberTransactions.length > 0" class="member-history-container">
                 <div class="member-summary-box">
                    <div>
                       <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Contributions</div>
@@ -216,7 +275,7 @@ import * as XLSX from 'xlsx';
                          </span>
                       </div>
                       <div style="font-size: 0.7rem; color: var(--text-muted);">
-                         📅 {{ tx.date | date:'dd MMM yyyy' }} at {{ tx.date | date:'shortTime' }}
+                         📅 {{ tx.date | date:'dd MMM yyyy' }}
                       </div>
                    </div>
                    <div *ngIf="memberTransactions.length > 5" style="text-align: center; font-size: 0.7rem; color: var(--text-muted); font-weight: 700; margin-top: 12px; cursor: pointer;">
@@ -225,10 +284,34 @@ import * as XLSX from 'xlsx';
                 </div>
              </div>
 
-             <div *ngIf="selectedMemberId && memberTransactions.length === 0" style="padding: 40px; text-align: center;">
+             <div *ngIf="selectedMember && memberTransactions.length === 0" style="padding: 40px; text-align: center;">
                 <div style="font-size: 2rem; opacity: 0.5;">🔍</div>
                 <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 12px;">No historical data found for this member.</div>
              </div>
+          </div>
+       </div>
+    </div>
+
+    <!-- PART 3: GENERAL REPORT -->
+    <div *ngIf="activePart === 'general'" class="report-section animate-slide-up">
+       <div class="card" style="max-width: 800px; margin: 0 auto;">
+          <h3 class="card-title" style="margin-bottom: 8px;">👥 Member Registry Export</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 24px;">Select the specific registry fields you want to include in your generated report. Only selected fields will reflect in the PDF and Excel.</p>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; background: var(--bg-main); padding: 24px; border-radius: 12px; border: 1px solid var(--border-color);">
+             <label *ngFor="let field of memberExportFields" style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; color: var(--text-dark); font-size: 0.9rem;">
+                <input type="checkbox" [(ngModel)]="field.selected" style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
+                {{ field.label }}
+             </label>
+          </div>
+
+          <div style="display: flex; gap: 16px;">
+             <button class="btn btn-success" (click)="exportRegistryExcel()" style="flex: 1; height: 48px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                📊 Download Excel
+             </button>
+             <button class="btn btn-primary" (click)="exportRegistryPDF()" style="flex: 1; height: 48px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                📄 Download PDF
+             </button>
           </div>
        </div>
     </div>
@@ -586,7 +669,7 @@ import * as XLSX from 'xlsx';
 export class ReportsComponent implements OnInit {
   private supabase = inject(SupabaseService);
 
-  activePart: 'attendance' | 'financial' = 'attendance';
+
   isLoadingLeaderboard = false;
   hasGeneratedLeaderboard = false;
 
@@ -594,6 +677,20 @@ export class ReportsComponent implements OnInit {
     start: new Date(new Date().setDate(1)).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
   };
+  attendanceSelectedMember: string | null = null;
+
+  activePart: 'attendance' | 'financial' | 'general' = 'attendance';
+  
+  memberExportFields = [
+    { key: 'name', label: 'Full Legal Name', selected: true },
+    { key: 'email_id', label: 'Email Address', selected: true },
+    { key: 'role', label: 'System Role', selected: true },
+    { key: 'contact_details', label: 'Primary Contact', selected: true },
+    { key: 'password', label: 'Login Password', selected: false },
+    { key: 'sabha_name', label: 'Branch/Sabha', selected: false },
+    { key: 'address', label: 'Residential Address', selected: false },
+    { key: 'status', label: 'Account Status', selected: false }
+  ];
 
   financialRange = {
     start: new Date(new Date().setDate(1)).toISOString().split('T')[0],
@@ -601,11 +698,14 @@ export class ReportsComponent implements OnInit {
   };
 
   members: any[] = [];
-  selectedMemberId: string | null = null;
   selectedOrganization: string | null = null;
   selectedMember: string | null = null;
+  
   memberTransactions: any[] = [];
   memberTotalContributions: number = 0;
+
+  orgTransactions: any[] = [];
+  orgTotalContributions: number = 0;
 
   getOrganizations() {
     return this.members.filter(m => m.role === 'Organization/Activity');
@@ -613,22 +713,6 @@ export class ReportsComponent implements OnInit {
 
   getRegularMembers() {
     return this.members.filter(m => m.role !== 'Organization/Activity');
-  }
-
-  onOrganizationChange() {
-    if (this.selectedOrganization) {
-      this.selectedMember = null;
-    }
-    this.selectedMemberId = this.selectedOrganization;
-    this.fetchMemberReport();
-  }
-
-  onMemberChange() {
-    if (this.selectedMember) {
-      this.selectedOrganization = null;
-    }
-    this.selectedMemberId = this.selectedMember;
-    this.fetchMemberReport();
   }
 
   leaderboardRange = {
@@ -643,16 +727,22 @@ export class ReportsComponent implements OnInit {
   async ngOnInit() {
     await this.fetchAttendanceSummary();
     await this.fetchLeaderboard();
-    this.members = await this.supabase.getMembers();
+    this.supabase.getMembers().then(m => {
+      this.members = m;
+    });
   }
 
-  setPart(part: 'attendance' | 'financial') {
+  setPart(part: 'attendance' | 'financial' | 'general') {
     this.activePart = part;
   }
 
 
   async fetchAttendanceSummary() {
-    this.attendanceSummary = await this.supabase.getAttendanceSummaryReport(this.attendanceRange.start, this.attendanceRange.end);
+    this.attendanceSummary = await this.supabase.getAttendanceSummaryReport(
+      this.attendanceRange.start, 
+      this.attendanceRange.end,
+      this.attendanceSelectedMember || undefined
+    );
   }
 
   async fetchLeaderboard() {
@@ -691,20 +781,35 @@ export class ReportsComponent implements OnInit {
     return rangeTx;
   }
 
+  async fetchOrganizationReport() {
+     if (!this.selectedOrganization) {
+        this.orgTransactions = [];
+        this.orgTotalContributions = 0;
+        return;
+     }
+
+     const allTx = await this.supabase.getWalletTransactions();
+     
+     if (this.selectedOrganization === 'general') {
+       this.orgTransactions = allTx.filter((t: any) => !t.member_id);
+     } else {
+       this.orgTransactions = allTx.filter((t: any) => t.member_id === this.selectedOrganization);
+     }
+     
+     this.orgTotalContributions = this.orgTransactions
+        .filter(t => t.type === 'deposit')
+        .reduce((sum, t) => sum + t.amount, 0);
+  }
+
   async fetchMemberReport() {
-     if (!this.selectedMemberId) {
+     if (!this.selectedMember) {
         this.memberTransactions = [];
         this.memberTotalContributions = 0;
         return;
      }
 
      const allTx = await this.supabase.getWalletTransactions();
-     
-     if (this.selectedMemberId === 'general') {
-       this.memberTransactions = allTx.filter((t: any) => !t.member_id);
-     } else {
-       this.memberTransactions = allTx.filter((t: any) => t.member_id === this.selectedMemberId);
-     }
+     this.memberTransactions = allTx.filter((t: any) => t.member_id === this.selectedMember);
      
      this.memberTotalContributions = this.memberTransactions
         .filter(t => t.type === 'deposit')
@@ -753,6 +858,20 @@ export class ReportsComponent implements OnInit {
      }
   }
 
+  getFormattedDate(): string {
+     const now = new Date();
+     const day = String(now.getDate()).padStart(2, '0');
+     const month = String(now.getMonth() + 1).padStart(2, '0');
+     const year = now.getFullYear();
+     let hours = now.getHours();
+     const ampm = hours >= 12 ? 'PM' : 'AM';
+     hours = hours % 12;
+     hours = hours ? hours : 12;
+     const minutes = String(now.getMinutes()).padStart(2, '0');
+     const seconds = String(now.getSeconds()).padStart(2, '0');
+     return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds} ${ampm}`;
+  }
+
   async exportToPDF(type: string) {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -779,13 +898,18 @@ export class ReportsComponent implements OnInit {
        doc.setTextColor(150);
        doc.text(str, pageWidth - 25, pageHeight - 10);
        doc.text('© 2026 Rana Mandal - Official System Report', 14, pageHeight - 10);
-       doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, pageHeight - 5);
+       doc.text(`Generated on: ${this.getFormattedDate()}`, 14, pageHeight - 5);
     };
 
     if (type === 'attendance') {
       doc.setFontSize(12);
       doc.setTextColor(50);
-      doc.text(`Attendance Summary Audit: ${this.attendanceRange.start} to ${this.attendanceRange.end}`, 14, 45);
+      let title = `Attendance Summary Audit: ${this.attendanceRange.start} to ${this.attendanceRange.end}`;
+      if (this.attendanceSelectedMember) {
+        const m = this.members.find(x => x.id === this.attendanceSelectedMember);
+        if (m) title += ` | Member: ${m.name}`;
+      }
+      doc.text(title, 14, 45);
       
       autoTable(doc, {
         startY: 52,
@@ -820,12 +944,35 @@ export class ReportsComponent implements OnInit {
       });
       doc.save(`Rana_Mandal_Financial_${this.financialRange.start}.pdf`);
 
-    } else if (type === 'member_report') {
+    } else if (type === 'org_report') {
       let profileName = 'Organization General';
-      if (this.selectedMemberId !== 'general') {
-        const member = this.members.find(m => m.id === this.selectedMemberId);
+      if (this.selectedOrganization !== 'general') {
+        const member = this.members.find(m => m.id === this.selectedOrganization);
         if (member) profileName = member.name;
       }
+      
+      doc.text(`Activity / Organization Financial Audit: ${profileName}`, 14, 45);
+      doc.setFontSize(10);
+      doc.text(`Total Authenticated Deposits: INR ${this.orgTotalContributions.toLocaleString()}`, 14, 52);
+
+      autoTable(doc, {
+        startY: 60,
+        head: [['Log Date', 'Transaction Description', 'Type', 'Capital Amount']],
+        body: this.orgTransactions.map(t => [
+          new Date(t.date).toLocaleDateString('en-IN'),
+          t.description,
+          t.type.toUpperCase(),
+          `INR ${t.amount}`
+        ]),
+        headStyles: { fillColor: [230, 81, 0] },
+        didDrawPage: footer
+      });
+      doc.save(`Rana_Mandal_Activity_${profileName.replace(/\s/g, '_')}.pdf`);
+      
+    } else if (type === 'member_report') {
+      let profileName = 'Member Profile';
+      const member = this.members.find(m => m.id === this.selectedMember);
+      if (member) profileName = member.name;
       
       doc.text(`Individual Financial Audit Profile: ${profileName}`, 14, 45);
       doc.setFontSize(10);
@@ -845,5 +992,106 @@ export class ReportsComponent implements OnInit {
       });
       doc.save(`Rana_Mandal_Report_${profileName.replace(/\s/g, '_')}.pdf`);
     }
+  }
+
+  async exportRegistryPDF() {
+     const selectedFields = this.memberExportFields.filter(f => f.selected);
+     if (selectedFields.length === 0) {
+        alert("Please select at least one field to export.");
+        return;
+     }
+
+     const doc = new jsPDF('landscape');
+     const pageWidth = doc.internal.pageSize.getWidth();
+     const pageHeight = doc.internal.pageSize.getHeight();
+     
+     // Fetch and add logo
+     const logoBase64 = await this.getBase64Image('assets/logo.png');
+     if (logoBase64) {
+        doc.addImage(logoBase64, 'PNG', 14, 10, 22, 22);
+     }
+
+     // Styled Header
+     doc.setFontSize(22);
+     doc.setTextColor(30, 58, 138); // Primary blue color
+     doc.text('RANA MANDAL SABHA', 40, 20);
+     doc.setFontSize(10);
+     doc.setTextColor(150);
+     doc.text('A Center for Administrative Excellence', 40, 26);
+     doc.line(14, 35, pageWidth - 14, 35);
+
+     // Document Specific Title
+     doc.setFontSize(14);
+     doc.setTextColor(30, 58, 138);
+     doc.text('Rana Mandal Yuvak Details', 14, 45);
+
+     doc.setFontSize(10);
+     doc.setTextColor(100);
+     
+     // Format date dd/MM/yyyy
+     const formattedDate = this.getFormattedDate();
+     
+     doc.text(`Generated on: ${formattedDate}`, 14, 52);
+     
+     const headers = selectedFields.map(f => f.label);
+     const body = this.members.filter(m => m.role !== 'Organization/Activity').map(m => {
+        return selectedFields.map(f => {
+           if (f.key === 'joining_date') {
+             return m[f.key] ? new Date(m[f.key]).toLocaleDateString('en-IN') : 'N/A';
+           }
+           if (f.key === 'balance') {
+             return `INR ${m[f.key] || 0}`;
+           }
+           return m[f.key] || 'N/A';
+        });
+     });
+
+     const footer = (data: any) => {
+        const str = `Page ${data.pageNumber}`;
+        doc.setFontSize(9);
+        doc.setTextColor(150);
+        doc.text(str, pageWidth - 25, pageHeight - 10);
+        doc.text('© 2026 Rana Mandal - Official System Report', 14, pageHeight - 10);
+        doc.text(`Generated on: ${formattedDate}`, 14, pageHeight - 5);
+     };
+
+     autoTable(doc, {
+       startY: 58,
+       head: [headers],
+       body: body,
+       theme: 'striped',
+       headStyles: { fillColor: [30, 58, 138] },
+       styles: { fontSize: 9 },
+       didDrawPage: footer
+     });
+
+     doc.save('Rana_Mandal_Yuvak_Details.pdf');
+  }
+
+  exportRegistryExcel() {
+     const selectedFields = this.memberExportFields.filter(f => f.selected);
+     if (selectedFields.length === 0) {
+        alert("Please select at least one field to export.");
+        return;
+     }
+
+     const data = this.members.filter(m => m.role !== 'Organization/Activity').map(m => {
+        const row: any = {};
+        selectedFields.forEach(f => {
+           if (f.key === 'joining_date') {
+             row[f.label] = m[f.key] ? new Date(m[f.key]).toLocaleDateString('en-IN') : 'N/A';
+           } else if (f.key === 'balance') {
+             row[f.label] = m[f.key] || 0;
+           } else {
+             row[f.label] = m[f.key] || 'N/A';
+           }
+        });
+        return row;
+     });
+
+     const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(data);
+     const wb: XLSX.WorkBook = XLSX.utils.book_new();
+     XLSX.utils.book_append_sheet(wb, ws, 'Registry');
+     XLSX.writeFile(wb, 'Rana_Mandal_Registry_Report.xlsx');
   }
 }

@@ -24,92 +24,118 @@ Chart.register(...registerables);
 
     <div class="bento-grid animate-slide-up">
       
-      <!-- 1) TOTAL MEMBER VIEW AND COUNT -->
-      <div class="bento-item col-4">
-         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
-            <div class="form-label">Total Membership</div>
-            <div style="font-size: 1.5rem;">👥</div>
+      <!-- STATS ROW -->
+      <div class="bento-item col-4 stat-card">
+         <div class="stat-header">
+            <span class="stat-title">Total Membership</span>
+            <span class="stat-icon mem-icon">👥</span>
          </div>
-         <div *ngIf="!isLoading" style="font-size: 3rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.02em;">
-            {{ report?.memberCount }}
+         <div *ngIf="!isLoading" class="stat-value">{{ report?.memberCount }}</div>
+         <div *ngIf="isLoading" class="skeleton stat-skeleton"></div>
+         <div class="stat-footer success">↑ Active Community</div>
+      </div>
+
+      <div class="bento-item col-4 stat-card">
+         <div class="stat-header">
+            <span class="stat-title">Financial Balance</span>
+            <span class="stat-icon wal-icon">💰</span>
          </div>
-         <div *ngIf="isLoading" class="skeleton" style="height: 60px; width: 120px; border-radius: 12px;"></div>
-         <div style="margin-top: 16px; display: flex; align-items: center; gap: 8px;">
-            <span style="color: var(--success); font-weight: 800; font-size: 0.85rem;">↑ 12% Growth</span>
-            <span style="color: var(--text-muted); font-size: 0.75rem;">vs last quarter</span>
+         <div *ngIf="!isLoading" class="stat-value">₹{{ report?.totalBalance | number }}</div>
+         <div *ngIf="isLoading" class="skeleton stat-skeleton"></div>
+         <div class="stat-footer success">↑ Core Fund</div>
+      </div>
+
+      <div class="bento-item col-4 stat-card" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+         <div style="padding: 24px 24px 0 24px;">
+            <div class="stat-header">
+               <span class="stat-title">Last Sabha: {{ lastSabha?.title || 'Loading...' }}</span>
+               <span class="stat-icon att-icon">📊</span>
+            </div>
+         </div>
+         <div *ngIf="lastSabha" style="display: flex; flex: 1; margin-top: 16px;">
+            <div class="attendance-stat present">
+               <div class="val">{{ lastSabha.present }}</div>
+               <div class="lbl">Present</div>
+            </div>
+            <div class="attendance-stat absent">
+               <div class="val">{{ lastSabha.absent }}</div>
+               <div class="lbl">Absent</div>
+            </div>
+            <div class="attendance-stat leave">
+               <div class="val">{{ lastSabha.leave }}</div>
+               <div class="lbl">Leave</div>
+            </div>
+         </div>
+         <div *ngIf="isLoading" class="skeleton" style="height: 100%; margin: 16px 24px 24px;"></div>
+      </div>
+
+      <!-- MODULE NAVIGATION HUB -->
+      <div style="grid-column: span 12; margin-top: 12px;">
+         <div class="form-label" style="margin-bottom: 20px; font-size: 1.2rem; color: var(--text-dark);">🚀 Operations Command Center</div>
+         <div class="module-grid">
+            <button (click)="router.navigate(['/members'])" class="module-card">
+               <div class="module-icon mem-icon">👥</div>
+               <div class="module-info">
+                  <div class="title">Member Registry</div>
+                  <div class="sub">Manage profiles & details</div>
+               </div>
+               <div class="go-arrow">→</div>
+            </button>
+            <button (click)="router.navigate(['/attendance'])" class="module-card">
+               <div class="module-icon att-icon">📝</div>
+               <div class="module-info">
+                  <div class="title">Attendance Tracker</div>
+                  <div class="sub">Record live presence</div>
+               </div>
+               <div class="go-arrow">→</div>
+            </button>
+            <button (click)="router.navigate(['/schedule'])" class="module-card">
+               <div class="module-icon sch-icon">📅</div>
+               <div class="module-info">
+                  <div class="title">Sabha Scheduler</div>
+                  <div class="sub">Plan upcoming events</div>
+               </div>
+               <div class="go-arrow">→</div>
+            </button>
+            <button (click)="router.navigate(['/wallet'])" class="module-card">
+               <div class="module-icon wal-icon">💰</div>
+               <div class="module-info">
+                  <div class="title">Wallet & Financials</div>
+                  <div class="sub">Manage organization funds</div>
+               </div>
+               <div class="go-arrow">→</div>
+            </button>
+            <button (click)="router.navigate(['/reports'])" class="module-card">
+               <div class="module-icon rep-icon">📊</div>
+               <div class="module-info">
+                  <div class="title">System Reports</div>
+                  <div class="sub">Generate analytical audits</div>
+               </div>
+               <div class="go-arrow">→</div>
+            </button>
+            <button (click)="router.navigate(['/roles'])" class="module-card">
+               <div class="module-icon rol-icon">🛡️</div>
+               <div class="module-info">
+                  <div class="title">Security & Roles</div>
+                  <div class="sub">Access control matrix</div>
+               </div>
+               <div class="go-arrow">→</div>
+            </button>
          </div>
       </div>
 
-      <!-- 2) WEEKLY SABHA ATTENDANCE WISE GRAPH -->
-      <div class="bento-item col-8 row-2">
-         <div class="form-label" style="margin-bottom: 24px;">Weekly Attendance Trends</div>
-         <div style="height: 250px; position: relative;">
+      <!-- CHARTS -->
+      <div class="bento-item col-6 row-2" style="margin-top: 12px;">
+         <div class="form-label" style="margin-bottom: 24px; font-size: 1.1rem;">📈 Weekly Attendance Trends</div>
+         <div style="height: 280px; position: relative;">
             <canvas #attendanceChart></canvas>
          </div>
       </div>
 
-      <!-- 3) PREVIOUS SABHA ATTENDANCE COUNT AND VIEW -->
-      <div class="bento-item col-4">
-         <div class="form-label" style="margin-bottom: 20px;">Last Sabha Highlights</div>
-         <div *ngIf="lastSabha" style="display: flex; flex-direction: column; gap: 16px;">
-            <div style="padding: 16px; background: var(--bg-main); border-radius: 12px; border: 1px solid var(--border-color);">
-               <div style="font-weight: 800; color: var(--text-dark); font-size: 1rem; margin-bottom: 4px;">{{ lastSabha.title }}</div>
-               <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">{{ lastSabha.date | date:'mediumDate' }}</div>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-               <div style="text-align: center;">
-                  <div style="font-size: 1.1rem; font-weight: 800; color: var(--success);">{{ lastSabha.present }}</div>
-                  <div style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase;">Present</div>
-               </div>
-               <div style="text-align: center;">
-                  <div style="font-size: 1.1rem; font-weight: 800; color: var(--danger);">{{ lastSabha.absent }}</div>
-                  <div style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase;">Absent</div>
-               </div>
-               <div style="text-align: center;">
-                  <div style="font-size: 1.1rem; font-weight: 800; color: var(--warning);">{{ lastSabha.leave }}</div>
-                  <div style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase;">Leave</div>
-               </div>
-            </div>
-         </div>
-         <div *ngIf="isLoading" class="skeleton" style="height: 120px; width: 100%; border-radius: 12px;"></div>
-      </div>
-
-      <!-- 4) FINANCE MODULE VIEW WITH GRAPH -->
-      <div class="bento-item col-8 row-2">
-         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-            <div class="form-label">Financial Growth history</div>
-            <div style="font-weight: 800; color: var(--text-dark);">₹{{ report?.totalBalance | number }}</div>
-         </div>
-         <div style="height: 250px; position: relative;">
+      <div class="bento-item col-6 row-2" style="margin-top: 12px;">
+         <div class="form-label" style="margin-bottom: 24px; font-size: 1.1rem;">💵 Financial Growth History</div>
+         <div style="height: 280px; position: relative;">
             <canvas #financeChart></canvas>
-         </div>
-      </div>
-
-      <!-- Quick Action Hub -->
-      <div class="bento-item col-4 row-2">
-         <div class="form-label" style="margin-bottom: 24px;">Operation Center</div>
-         <div style="display: grid; gap: 12px;">
-            <button (click)="router.navigate(['/attendance'])" class="action-btn">
-               <span class="icon">📝</span>
-               <div class="text">
-                  <div class="title">Mark Attendance</div>
-                  <div class="sub">Track live presence</div>
-               </div>
-            </button>
-            <button (click)="router.navigate(['/members'])" class="action-btn">
-               <span class="icon">👤</span>
-               <div class="text">
-                  <div class="title">New Registration</div>
-                  <div class="sub">Add member profile</div>
-               </div>
-            </button>
-            <button (click)="router.navigate(['/wallet'])" class="action-btn">
-               <span class="icon">💰</span>
-               <div class="text">
-                  <div class="title">Financial Audit</div>
-                  <div class="sub">Review transactions</div>
-               </div>
-            </button>
          </div>
       </div>
 
@@ -121,38 +147,141 @@ Chart.register(...registerables);
     </button>
   `,
   styles: [`
-    .action-btn {
+    .stat-card {
        display: flex;
-       align-items: center;
-       gap: 16px;
-       padding: 16px;
-       background: var(--bg-main);
-       border: 1px solid var(--border-color);
-       border-radius: 16px;
-       cursor: pointer;
-       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-       text-align: left;
-       width: 100%;
+       flex-direction: column;
+       justify-content: space-between;
     }
-    .action-btn:hover {
-       background: var(--bg-card);
-       border-color: var(--primary);
-       transform: translateY(-2px);
-       box-shadow: var(--shadow-md);
+    .stat-header {
+       display: flex;
+       justify-content: space-between;
+       align-items: flex-start;
+       margin-bottom: 12px;
     }
-    .action-btn .icon {
-       font-size: 1.5rem;
-       width: 48px;
-       height: 48px;
-       background: var(--bg-card);
+    .stat-title {
+       font-size: 0.9rem;
+       font-weight: 800;
+       color: var(--text-muted);
+       text-transform: uppercase;
+       letter-spacing: 0.05em;
+    }
+    .stat-icon {
+       width: 40px;
+       height: 40px;
        border-radius: 12px;
        display: flex;
        align-items: center;
        justify-content: center;
-       border: 1px solid var(--border-color);
+       font-size: 1.2rem;
     }
-    .action-btn .title { font-weight: 800; color: var(--text-dark); font-size: 0.9rem; }
-    .action-btn .sub { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; }
+    .stat-value {
+       font-size: 3rem;
+       font-weight: 900;
+       color: var(--text-dark);
+       letter-spacing: -0.03em;
+       line-height: 1;
+    }
+    .stat-skeleton {
+       height: 48px;
+       width: 60%;
+       border-radius: 8px;
+    }
+    .stat-footer {
+       margin-top: 16px;
+       font-size: 0.8rem;
+       font-weight: 700;
+    }
+    .stat-footer.success { color: var(--success); }
+
+    .attendance-stat {
+       flex: 1;
+       display: flex;
+       flex-direction: column;
+       align-items: center;
+       justify-content: center;
+       padding: 16px;
+       background: var(--bg-main);
+       border-top: 1px solid var(--border-color);
+    }
+    .attendance-stat:not(:last-child) {
+       border-right: 1px solid var(--border-color);
+    }
+    .attendance-stat .val { font-size: 1.5rem; font-weight: 900; margin-bottom: 4px; }
+    .attendance-stat .lbl { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
+    .attendance-stat.present .val { color: var(--success); }
+    .attendance-stat.absent .val { color: var(--danger); }
+    .attendance-stat.leave .val { color: var(--warning); }
+
+    .module-grid {
+       display: grid;
+       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+       gap: 20px;
+    }
+    .module-card {
+       background: var(--bg-card);
+       border: 1px solid var(--border-color);
+       border-radius: 20px;
+       padding: 20px;
+       display: flex;
+       align-items: center;
+       gap: 16px;
+       cursor: pointer;
+       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+       text-align: left;
+       position: relative;
+       overflow: hidden;
+    }
+    .module-card:hover {
+       transform: translateY(-4px);
+       box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+       border-color: var(--primary);
+    }
+    .dark-theme .module-card:hover {
+       box-shadow: 0 12px 24px rgba(0,0,0,0.3);
+    }
+    .module-card::after {
+       content: '';
+       position: absolute;
+       top: 0; left: 0; right: 0; bottom: 0;
+       background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+       opacity: 0;
+       transition: opacity 0.3s;
+    }
+    .module-card:hover::after { opacity: 1; }
+    
+    .module-icon {
+       width: 56px;
+       height: 56px;
+       border-radius: 16px;
+       display: flex;
+       align-items: center;
+       justify-content: center;
+       font-size: 1.8rem;
+       flex-shrink: 0;
+    }
+    .mem-icon { background: rgba(59, 130, 246, 0.1); color: #3B82F6; }
+    .att-icon { background: rgba(16, 185, 129, 0.1); color: #10B981; }
+    .sch-icon { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
+    .wal-icon { background: rgba(239, 68, 68, 0.1); color: #EF4444; }
+    .rep-icon { background: rgba(139, 92, 246, 0.1); color: #8B5CF6; }
+    .rol-icon { background: rgba(107, 114, 128, 0.1); color: #6B7280; }
+
+    .module-info { flex: 1; }
+    .module-info .title { font-weight: 800; font-size: 1.1rem; color: var(--text-dark); margin-bottom: 4px; }
+    .module-info .sub { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
+    
+    .go-arrow {
+       font-size: 1.2rem;
+       color: var(--text-muted);
+       opacity: 0.5;
+       transition: all 0.3s;
+       transform: translateX(-10px);
+    }
+    .module-card:hover .go-arrow {
+       opacity: 1;
+       transform: translateX(0);
+       color: var(--primary);
+    }
   `]
 })
 export class DashboardComponent implements OnInit, AfterViewInit {

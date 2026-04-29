@@ -232,12 +232,13 @@ export class MemberManagementComponent implements OnInit {
   }
 
   get filteredMembers() {
-    let list = this.members;
+    // Exclude 'Organization/Activity' from the human member registry view
+    let list = this.members.filter(m => m.role !== 'Organization/Activity');
     
-    // Self-Service Logic: Non-admins only see themselves
+    // Only show profile for regular members if they lack global view/edit permissions
+    const currentUser = this.auth.currentUserValue;
     if (!this.isAdmin) {
-      const currentUser = this.auth.currentUserValue;
-      list = this.members.filter(m => m.id === currentUser?.id || m.emailId === currentUser?.email);
+      list = list.filter(m => m.id === currentUser?.id || m.emailId === currentUser?.email);
     }
 
     if (!this.searchQuery.trim()) return list;

@@ -395,15 +395,21 @@ export class SupabaseService {
   // ------------------------------------
   // REPORTING METHODS
   // ------------------------------------
-  async getAttendanceSummaryReport(startDate: string, endDate: string) {
+  async getAttendanceSummaryReport(startDate: string, endDate: string, memberId?: string) {
     if (this.isMockMode) {
       return { P: 150, A: 20, L: 10 };
     }
-    const { data, error } = await this.supabase
+    let query = this.supabase
       .from('attendance')
       .select('status')
       .gte('attendance_date', startDate)
       .lte('attendance_date', endDate);
+      
+    if (memberId) {
+      query = query.eq('member_id', memberId);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     
     return (data || []).reduce((acc: any, curr: any) => {
