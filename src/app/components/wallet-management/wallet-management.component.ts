@@ -60,8 +60,8 @@ import { SupabaseService } from '../../services/supabase.service';
         </div>
         <div class="form-group" style="margin: 0;">
           <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
-            Organization (Optional)
-            <a href="javascript:void(0)" (click)="openQuickAddMember()" style="font-size: 0.75rem; color: var(--primary); font-weight: 800; text-decoration: none;">+ Add Org / Activity</a>
+            Organization
+            <a href="javascript:void(0)" (click)="openQuickAddMember()" style="font-size: 0.7rem; color: var(--primary); font-weight: 800; text-decoration: none;">+ Add Org</a>
           </label>
           <select class="form-control" [(ngModel)]="selectedOrganization" (change)="onOrganizationChange()">
             <option [value]="'general'">Organization General</option>
@@ -69,7 +69,7 @@ import { SupabaseService } from '../../services/supabase.service';
           </select>
         </div>
         <div class="form-group" style="margin: 0;">
-          <label class="form-label">Member Name (Optional)</label>
+          <label class="form-label">Member Name</label>
           <select class="form-control" [(ngModel)]="selectedMember" (change)="onMemberChange()">
             <option [value]="null">-- Select Member --</option>
             <option *ngFor="let m of getRegularMembers()" [value]="m.id">{{ m.name }}</option>
@@ -180,6 +180,34 @@ import { SupabaseService } from '../../services/supabase.service';
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Mobile card layout for Wallet -->
+      <div class="show-on-mobile" *ngIf="!loading">
+        <div class="mobile-card-list" style="display: flex; flex-direction: column; gap: 16px;">
+          <div *ngFor="let t of transactions" class="mobile-card" style="border: 1px solid var(--border-color); background: var(--bg-card); border-radius: 20px; padding: 18px; box-shadow: var(--shadow-sm);">
+            <div class="mobile-card-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+               <div style="flex: 1;">
+                  <div style="font-weight: 800; color: var(--text-dark); font-size: 0.95rem; margin-bottom: 2px;">{{ t.description }}</div>
+                  <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">📅 {{ t.date | date:'dd MMM yyyy' | uppercase }}</div>
+               </div>
+               <div style="text-align: right;">
+                  <div [style.color]="t.type === 'deposit' ? 'var(--success)' : 'var(--danger)'" style="font-weight: 900; font-size: 1.1rem;">
+                    {{ t.type === 'deposit' ? '+' : '-' }} ₹{{ t.amount | number:'1.0-0' }}
+                  </div>
+                  <span class="badge" style="font-size: 0.6rem; padding: 2px 6px; margin-top: 4px;">{{ t.status || 'COMPLETED' }}</span>
+               </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 12px;">
+               <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700;">REF: {{ t.reference }}</span>
+               <button class="btn" (click)="deleteTransaction(t.id)" [disabled]="processing" 
+                       style="background: #fff5f5; color: var(--danger); border: 1px solid #ffe3e3; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem;">
+                  🗑️ REMOVE
+               </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div *ngIf="!loading && transactions.length === 0" style="padding: 60px; text-align: center; color: var(--text-muted);">

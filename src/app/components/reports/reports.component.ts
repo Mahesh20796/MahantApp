@@ -12,18 +12,25 @@ import * as XLSX from 'xlsx';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="dashboard-header animate-fade-in">
-      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
+      <div class="reports-header-container" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; gap: 20px;">
         <div>
           <h1 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -0.04em; margin-bottom: 8px;">📊 System Reports</h1>
           <p style="color: var(--text-muted); font-size: 1.05rem; font-weight: 500;">Export and analyze your historical data in multiple formats.</p>
         </div>
         
         <!-- Part Selection Tabs -->
-        <div class="segmented-control">
+        <div class="segmented-control hide-on-mobile">
           <button [class.active]="activePart === 'attendance'" (click)="setPart('attendance')">📋 Attendance</button>
           <button [class.active]="activePart === 'financial'" (click)="setPart('financial')">💰 Financial</button>
           <button [class.active]="activePart === 'general'" (click)="setPart('general')">👥 General</button>
         </div>
+      </div>
+
+      <!-- Mobile Tabs -->
+      <div class="segmented-control show-on-mobile" style="margin-bottom: 24px; width: 100%;">
+        <button style="flex: 1; padding: 12px 4px; font-size: 0.75rem;" [class.active]="activePart === 'attendance'" (click)="setPart('attendance')">Attendance</button>
+        <button style="flex: 1; padding: 12px 4px; font-size: 0.75rem;" [class.active]="activePart === 'financial'" (click)="setPart('financial')">Financial</button>
+        <button style="flex: 1; padding: 12px 4px; font-size: 0.75rem;" [class.active]="activePart === 'general'" (click)="setPart('general')">General</button>
       </div>
     </div>
 

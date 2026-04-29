@@ -137,15 +137,15 @@ import { Role } from '../../models/role.model';
       <!-- Mobile View -->
       <div class="show-on-mobile">
         <div class="mobile-card-list">
-          <div *ngFor="let r of roles" class="mobile-card">
-            <div class="mobile-card-header">
+          <div *ngFor="let r of roles" class="mobile-card" style="border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); padding: 20px; border-radius: 20px; margin-bottom: 16px;">
+            <div class="mobile-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                <div style="font-weight: 800; color: var(--text-dark); font-size: 1.1rem;">{{r.name}}</div>
                <span class="badge" [style.background]="getRoleColor(r.name, 0.1)" [style.color]="getRoleColor(r.name)">{{ (r.name.includes('Admin') || r.name.includes('Sanchalak') ? 'Super Admin' : 'Staff') | uppercase }}</span>
             </div>
-            <p style="font-size: 0.9rem; color: var(--text-muted); margin: 16px 0; font-weight: 500;">{{ r.description }}</p>
-            <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;">
-               <button class="btn" style="background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-dark); padding: 10px 20px; border-radius: 10px;" (click)="editRole(r)">Edit</button>
-               <button class="btn" style="background: #fff5f5; border: 1px solid #ffe3e3; color: var(--danger); padding: 10px 20px; border-radius: 10px;" (click)="deleteRole(r.id)">Delete</button>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin: 8px 0 16px; font-weight: 500; line-height: 1.4;">{{ r.description }}</p>
+            <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+               <button class="btn" style="flex: 1; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-dark); padding: 10px; border-radius: 10px; justify-content: center;" (click)="editRole(r)">Edit</button>
+               <button class="btn" style="flex: 1; background: #fff5f5; border: 1px solid #ffe3e3; color: var(--danger); padding: 10px; border-radius: 10px; justify-content: center;" (click)="deleteRole(r.id)">Delete</button>
             </div>
           </div>
         </div>
@@ -181,6 +181,7 @@ import { Role } from '../../models/role.model';
     .permission-table td {
       padding: 14px 12px;
       border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
     }
     .perm-check {
       width: 18px;

@@ -129,42 +129,54 @@ interface AttendanceRecord {
 
       <!-- Mobile card layout for attendance -->
       <div class="show-on-mobile" *ngIf="!isLoading || attendanceList.length > 0">
-        <div class="mobile-card-list">
-          <div *ngFor="let record of filteredAttendanceList" class="mobile-card">
-            <div class="mobile-card-header">
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--primary);">
+        <div class="mobile-card-list" style="display: flex; flex-direction: column; gap: 14px; padding-bottom: 20px;">
+          <div *ngFor="let record of paginatedAttendanceList" class="mobile-card" 
+               style="border: 1px solid var(--border-color); background: var(--bg-card); border-radius: 20px; padding: 18px; box-shadow: var(--shadow-sm); transition: all 0.2s;">
+            <div class="mobile-card-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--primary); border: 1px solid rgba(248, 121, 65, 0.1);">
                   {{ record.memberName ? record.memberName.charAt(0) : '?' }}
                 </div>
                 <div>
-                  <div style="font-weight: 700; color: var(--text-dark);">{{ record.memberName }}</div>
-                  <div style="font-size: 0.7rem; color: var(--text-muted);">{{ record.role }}</div>
+                  <div style="font-weight: 800; color: var(--text-dark); font-size: 1.05rem; letter-spacing: -0.01em;">{{ record.memberName }}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">{{ record.role }}</div>
                 </div>
               </div>
-              <span *ngIf="record.timestamp" style="font-size: 0.65rem; color: var(--text-muted);">🕒 {{ (record.timestamp | date:'h:mm:ss a') | lowercase }}</span>
+              <div style="text-align: right;">
+                 <span *ngIf="record.status" class="badge" 
+                       [style.background]="record.status === 'P' ? '#DCFCE7' : (record.status === 'A' ? '#FEE2E2' : '#FEF3C7')"
+                       [style.color]="record.status === 'P' ? '#166534' : (record.status === 'A' ? '#991B1B' : '#92400E')"
+                       style="font-size: 0.65rem; padding: 4px 10px; border-radius: 8px;">
+                   {{ record.status === 'P' ? 'PRESENT' : record.status === 'A' ? 'ABSENT' : 'LEAVE' }}
+                 </span>
+                 <div *ngIf="record.timestamp" style="font-size: 0.6rem; color: var(--text-muted); margin-top: 4px; font-weight: 700; text-transform: uppercase;">🕒 {{ (record.timestamp | date:'h:mm a') | lowercase }}</div>
+              </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; border-top: 1px solid var(--border-color); padding-top: 14px;">
               <button class="btn" (click)="mark(record, 'P')" 
                       [disabled]="!selectedSabhaId"
-                      [style.background]="record.status === 'P' ? 'var(--success)' : 'var(--bg-card)'" 
+                      [style.background]="record.status === 'P' ? 'var(--success)' : 'var(--bg-main)'" 
                       [style.color]="record.status === 'P' ? 'white' : 'var(--text-dark)'"
-                      style="justify-content: center; padding: 14px 8px; border: 1px solid var(--border-color); font-weight: 800; border-radius: 12px; font-size: 0.75rem; box-shadow: var(--shadow-sm); opacity: selectedSabhaId ? 1 : 0.5;">
-                {{ record.status === 'P' ? 'PRESENT ✅' : 'PRESENT' }}
+                      [style.border-color]="record.status === 'P' ? 'var(--success)' : 'var(--border-color)'"
+                      style="justify-content: center; height: 48px; border: 1px solid; font-weight: 800; border-radius: 14px; font-size: 0.9rem; box-shadow: var(--shadow-sm); opacity: selectedSabhaId ? 1 : 0.5;">
+                P
               </button>
               <button class="btn" (click)="mark(record, 'A')" 
                       [disabled]="!selectedSabhaId"
-                      [style.background]="record.status === 'A' ? 'var(--danger)' : 'var(--bg-card)'" 
+                      [style.background]="record.status === 'A' ? 'var(--danger)' : 'var(--bg-main)'" 
                       [style.color]="record.status === 'A' ? 'white' : 'var(--text-dark)'"
-                      style="justify-content: center; padding: 14px 8px; border: 1px solid var(--border-color); font-weight: 800; border-radius: 12px; font-size: 0.75rem; box-shadow: var(--shadow-sm); opacity: selectedSabhaId ? 1 : 0.5;">
-                {{ record.status === 'A' ? 'ABSENT ❌' : 'ABSENT' }}
+                      [style.border-color]="record.status === 'A' ? 'var(--danger)' : 'var(--border-color)'"
+                      style="justify-content: center; height: 48px; border: 1px solid; font-weight: 800; border-radius: 14px; font-size: 0.9rem; box-shadow: var(--shadow-sm); opacity: selectedSabhaId ? 1 : 0.5;">
+                A
               </button>
               <button class="btn" (click)="mark(record, 'L')" 
                       [disabled]="!selectedSabhaId"
-                      [style.background]="record.status === 'L' ? 'var(--warning)' : 'var(--bg-card)'" 
+                      [style.background]="record.status === 'L' ? 'var(--warning)' : 'var(--bg-main)'" 
                       [style.color]="record.status === 'L' ? 'white' : 'var(--text-dark)'"
-                      style="justify-content: center; padding: 14px 8px; border: 1px solid var(--border-color); font-weight: 800; border-radius: 12px; font-size: 0.75rem; box-shadow: var(--shadow-sm); opacity: selectedSabhaId ? 1 : 0.5;">
-                {{ record.status === 'L' ? 'LEAVE 🏠' : 'LEAVE' }}
+                      [style.border-color]="record.status === 'L' ? 'var(--warning)' : 'var(--border-color)'"
+                      style="justify-content: center; height: 48px; border: 1px solid; font-weight: 800; border-radius: 14px; font-size: 0.9rem; box-shadow: var(--shadow-sm); opacity: selectedSabhaId ? 1 : 0.5;">
+                L
               </button>
             </div>
           </div>
