@@ -865,18 +865,24 @@ export class ReportsComponent implements OnInit {
      }
   }
 
+  formatDateDMY(dateStr: string): string {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
   getFormattedDate(): string {
      const now = new Date();
      const day = String(now.getDate()).padStart(2, '0');
      const month = String(now.getMonth() + 1).padStart(2, '0');
      const year = now.getFullYear();
-     let hours = now.getHours();
-     const ampm = hours >= 12 ? 'PM' : 'AM';
-     hours = hours % 12;
-     hours = hours ? hours : 12;
+     const hours = String(now.getHours()).padStart(2, '0');
      const minutes = String(now.getMinutes()).padStart(2, '0');
      const seconds = String(now.getSeconds()).padStart(2, '0');
-     return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds} ${ampm}`;
+     return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
   }
 
   async exportToPDF(type: string) {
@@ -911,7 +917,7 @@ export class ReportsComponent implements OnInit {
     if (type === 'attendance') {
       doc.setFontSize(12);
       doc.setTextColor(50);
-      let title = `Attendance Summary Audit: ${this.attendanceRange.start} to ${this.attendanceRange.end}`;
+      let title = `Attendance Summary Audit: ${this.formatDateDMY(this.attendanceRange.start)} to ${this.formatDateDMY(this.attendanceRange.end)}`;
       if (this.attendanceSelectedMember) {
         const m = this.members.find(x => x.id === this.attendanceSelectedMember);
         if (m) title += ` | Member: ${m.name}`;
@@ -935,7 +941,7 @@ export class ReportsComponent implements OnInit {
     } else if (type === 'financial_range') {
       doc.setFontSize(12);
       doc.setTextColor(50);
-      doc.text(`Financial Audit Ledger: ${this.financialRange.start} to ${this.financialRange.end}`, 14, 45);
+      doc.text(`Financial Audit Ledger: ${this.formatDateDMY(this.financialRange.start)} to ${this.formatDateDMY(this.financialRange.end)}`, 14, 45);
       
       autoTable(doc, {
         startY: 52,
@@ -966,7 +972,7 @@ export class ReportsComponent implements OnInit {
         startY: 60,
         head: [['Log Date', 'Transaction Description', 'Type', 'Capital Amount']],
         body: this.orgTransactions.map(t => [
-          new Date(t.date).toLocaleDateString('en-IN'),
+          this.formatDateDMY(t.date),
           t.description,
           t.type.toUpperCase(),
           `INR ${t.amount}`
@@ -989,7 +995,7 @@ export class ReportsComponent implements OnInit {
         startY: 60,
         head: [['Log Date', 'Transaction Description', 'Type', 'Capital Amount']],
         body: this.memberTransactions.map(t => [
-          new Date(t.date).toLocaleDateString('en-IN'),
+          this.formatDateDMY(t.date),
           t.description,
           t.type.toUpperCase(),
           `INR ${t.amount}`
@@ -1044,7 +1050,7 @@ export class ReportsComponent implements OnInit {
      const body = this.members.filter(m => m.role !== 'Organization/Activity').map(m => {
         return selectedFields.map(f => {
            if (f.key === 'joining_date') {
-             return m[f.key] ? new Date(m[f.key]).toLocaleDateString('en-IN') : 'N/A';
+             return m[f.key] ? this.formatDateDMY(m[f.key]) : 'N/A';
            }
            if (f.key === 'balance') {
              return `INR ${m[f.key] || 0}`;
@@ -1086,7 +1092,7 @@ export class ReportsComponent implements OnInit {
         const row: any = {};
         selectedFields.forEach(f => {
            if (f.key === 'joining_date') {
-             row[f.label] = m[f.key] ? new Date(m[f.key]).toLocaleDateString('en-IN') : 'N/A';
+             row[f.label] = m[f.key] ? this.formatDateDMY(m[f.key]) : 'N/A';
            } else if (f.key === 'balance') {
              row[f.label] = m[f.key] || 0;
            } else {
