@@ -30,7 +30,7 @@ interface AttendanceRecord {
          </div>
          <div style="background: var(--primary-soft); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(248, 121, 65, 0.2); flex: 1; min-width: 150px;">
             <div style="font-size: 0.65rem; color: var(--primary); font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Session Date</div>
-            <div style="font-size: 1rem; font-weight: 800; color: var(--text-dark);">{{ selectedDate | date:'mediumDate' }}</div>
+            <div style="font-size: 1rem; font-weight: 800; color: var(--text-dark);">{{ selectedDate | date:'dd-MM-yyyy' }}</div>
             <div *ngIf="unmarkedCount > 0" style="font-size: 0.65rem; color: var(--warning); font-weight: 700; margin-top: 4px;">● {{ unmarkedCount }} members remaining</div>
             <div *ngIf="unmarkedCount === 0 && attendanceList.length > 0" style="font-size: 0.65rem; color: var(--success); font-weight: 700; margin-top: 4px;">● Everyone marked</div>
          </div>

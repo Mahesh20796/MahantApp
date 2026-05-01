@@ -240,7 +240,7 @@ import * as XLSX from 'xlsx';
                          </span>
                       </div>
                       <div style="font-size: 0.7rem; color: var(--text-muted); display: flex; gap: 12px;">
-                         <span>📅 {{ tx.date | date:'dd MMM yyyy' }}</span>
+                         <span>📅 {{ tx.date | date:'dd-MM-yyyy' }}</span>
                          <span *ngIf="tx.reference" style="font-weight: 700; color: var(--primary);">👤 {{ tx.reference }}</span>
                       </div>
                    </div>
@@ -287,7 +287,7 @@ import * as XLSX from 'xlsx';
                          </span>
                       </div>
                       <div style="font-size: 0.7rem; color: var(--text-muted);">
-                         📅 {{ tx.date | date:'dd MMM yyyy' }}
+                         📅 {{ tx.date | date:'dd-MM-yyyy' }}
                       </div>
                    </div>
                    <div *ngIf="memberTransactions.length > 5" style="text-align: center; font-size: 0.7rem; color: var(--text-muted); font-weight: 700; margin-top: 12px; cursor: pointer;">
@@ -894,7 +894,7 @@ export class ReportsComponent implements OnInit {
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    return `${day}-${month}-${year}`;
   }
 
   getFormattedDate(): string {
@@ -905,7 +905,7 @@ export class ReportsComponent implements OnInit {
      const hours = String(now.getHours()).padStart(2, '0');
      const minutes = String(now.getMinutes()).padStart(2, '0');
      const seconds = String(now.getSeconds()).padStart(2, '0');
-     return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+     return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
   }
 
   async exportToPDF(type: string) {

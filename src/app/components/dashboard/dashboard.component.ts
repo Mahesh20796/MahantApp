@@ -372,7 +372,12 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     this.attChart = new Chart(this.attendanceCanvas.nativeElement, {
       type: 'line',
       data: {
-        labels: attData.map(d => new Date(d.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })),
+        labels: attData.map(d => {
+          const dt = new Date(d.date);
+          const day = String(dt.getDate()).padStart(2, '0');
+          const month = String(dt.getMonth() + 1).padStart(2, '0');
+          return `${day}-${month}`;
+        }),
         datasets: [{
           label: 'Present Count',
           data: attData.map(d => d.count),

@@ -153,7 +153,7 @@ import { SupabaseService } from '../../services/supabase.service';
           <tbody>
             <tr *ngFor="let t of transactions" class="table-row-hover">
               <td style="color: var(--text-muted); font-size: 0.85rem; font-weight: 700;">
-                {{ t.date | date:'dd MMM yyyy' | uppercase }}
+                {{ t.date | date:'dd-MM-yyyy' | uppercase }}
                 <div style="font-size: 0.7rem; color: rgba(0,0,0,0.3);">{{ t.date | date:'shortTime' }}</div>
               </td>
               <td>
@@ -190,7 +190,7 @@ import { SupabaseService } from '../../services/supabase.service';
             <div class="mobile-card-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
                <div style="flex: 1;">
                   <div style="font-weight: 800; color: var(--text-dark); font-size: 1rem; margin-bottom: 2px; letter-spacing: -0.01em;">{{ t.description }}</div>
-                  <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">📅 {{ t.date | date:'dd MMM yyyy' }}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">📅 {{ t.date | date:'dd-MM-yyyy' }}</div>
                </div>
                <div style="text-align: right;">
                   <div [style.color]="t.type === 'deposit' ? 'var(--success)' : 'var(--danger)'" style="font-weight: 900; font-size: 1.15rem; letter-spacing: -0.02em;">
