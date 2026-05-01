@@ -220,9 +220,13 @@ import * as XLSX from 'xlsx';
 
              <div *ngIf="selectedOrganization && orgTransactions.length > 0" class="member-history-container">
                 <div class="member-summary-box">
-                   <div>
-                      <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Activity Deposits</div>
+                   <div style="flex: 1;">
+                      <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Deposits</div>
                       <div style="font-size: 1.4rem; font-weight: 900; color: var(--success);">₹{{ orgTotalContributions | number:'1.0-0' }}</div>
+                   </div>
+                   <div style="flex: 1; border-left: 1px solid var(--border-color); padding-left: 20px;">
+                      <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Amount</div>
+                      <div style="font-size: 1.4rem; font-weight: 900; color: var(--primary);">₹{{ orgNetBalance | number:'1.0-0' }}</div>
                    </div>
                    <button class="btn btn-primary" (click)="exportToPDF('org_report')" style="height: 38px; padding: 0 16px; font-size: 0.75rem;">Download Report</button>
                 </div>
@@ -235,8 +239,9 @@ import * as XLSX from 'xlsx';
                             {{ tx.type === 'deposit' ? '+' : '-' }} ₹{{ tx.amount }}
                          </span>
                       </div>
-                      <div style="font-size: 0.7rem; color: var(--text-muted);">
-                         📅 {{ tx.date | date:'dd MMM yyyy' }}
+                      <div style="font-size: 0.7rem; color: var(--text-muted); display: flex; gap: 12px;">
+                         <span>📅 {{ tx.date | date:'dd MMM yyyy' }}</span>
+                         <span *ngIf="tx.reference" style="font-weight: 700; color: var(--primary);">👤 {{ tx.reference }}</span>
                       </div>
                    </div>
                    <div *ngIf="orgTransactions.length > 5" style="text-align: center; font-size: 0.7rem; color: var(--text-muted); font-weight: 700; margin-top: 12px; cursor: pointer;">
@@ -713,6 +718,7 @@ export class ReportsComponent implements OnInit {
 
   orgTransactions: any[] = [];
   orgTotalContributions: number = 0;
+  orgNetBalance: number = 0;
 
   getOrganizations() {
     return this.members.filter(m => m.role === 'Organization/Activity');
@@ -800,12 +806,29 @@ export class ReportsComponent implements OnInit {
      if (this.selectedOrganization === 'general') {
        this.orgTransactions = allTx.filter((t: any) => !t.member_id);
      } else {
-       this.orgTransactions = allTx.filter((t: any) => t.member_id === this.selectedOrganization);
+       const org = this.members.find(m => m.id === this.selectedOrganization);
+        const orgName = org?.name;
+        this.orgTransactions = allTx.filter((t: any) => {
+          // Direct link to organization ID
+          if (t.member_id === this.selectedOrganization) return true;
+          
+          // Linked to a member but tagged with organization name in brackets [Org Name]
+          if (orgName && t.description && t.description.includes(`[${orgName}]`)) return true;
+          
+          return false;
+        });
+
      }
      
      this.orgTotalContributions = this.orgTransactions
         .filter(t => t.type === 'deposit')
         .reduce((sum, t) => sum + t.amount, 0);
+        
+     const totalWithdrawals = this.orgTransactions
+        .filter(t => t.type === 'withdrawal')
+        .reduce((sum, t) => sum + t.amount, 0);
+        
+     this.orgNetBalance = this.orgTotalContributions - totalWithdrawals;
   }
 
   async fetchMemberReport() {
@@ -964,20 +987,25 @@ export class ReportsComponent implements OnInit {
         if (member) profileName = member.name;
       }
       
-      doc.text(`Activity / Organization Financial Audit: ${profileName}`, 14, 45);
+      doc.text(`Activity Name: ${profileName}`, 14, 45);
       doc.setFontSize(10);
-      doc.text(`Total Authenticated Deposits: INR ${this.orgTotalContributions.toLocaleString()}`, 14, 52);
 
       autoTable(doc, {
         startY: 60,
-        head: [['Log Date', 'Transaction Description', 'Type', 'Capital Amount']],
+        head: [['Log Date', 'Member / Reference', 'Transaction Description', 'Type', 'Capital Amount']],
         body: this.orgTransactions.map(t => [
           this.formatDateDMY(t.date),
+          t.reference || 'N/A',
           t.description,
           t.type.toUpperCase(),
           `INR ${t.amount}`
         ]),
+        foot: [[
+          { content: 'Total Amount', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
+          { content: `INR ${this.orgNetBalance.toLocaleString()}`, styles: { fontStyle: 'bold' } }
+        ]],
         headStyles: { fillColor: [230, 81, 0] },
+        footStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0] },
         didDrawPage: footer
       });
       doc.save(`Rana_Mandal_Activity_${profileName.replace(/\s/g, '_')}.pdf`);

@@ -14,7 +14,7 @@ Chart.register(...registerables);
   template: `
     <div class="page-header animate-fade-in" style="margin-bottom: 24px;">
       <div>
-        <h1 style="font-weight: 900; color: var(--text-dark); letter-spacing: -0.05em; margin: 0; font-size: 2.2rem; line-height: 1.1;">नमस्ते, {{ (auth.currentUser$ | async)?.fullName || 'Admin' }}! 👋</h1>
+        <h1 style="font-weight: 900; color: var(--text-dark); letter-spacing: -0.05em; margin: 0; font-size: 2.2rem; line-height: 1.1;">જય સ્વામિનારાયણ 🙏</h1>
         <p style="color: var(--text-muted); font-size: 1rem; margin-top: 8px; font-weight: 600; opacity: 0.8;">Sabha Intelligence Command Center</p>
       </div>
       <div class="hide-on-mobile">
@@ -81,7 +81,7 @@ Chart.register(...registerables);
       </div>
 
       <!-- ANALYTICS PREVIEWS -->
-      <div class="bento-item col-6 chart-item">
+      <div class="bento-item col-8 chart-item">
          <div class="chart-header">
             <h3 class="chart-title">📊 Attendance Trends</h3>
             <span class="chart-sub">Weekly Performance</span>
@@ -91,13 +91,37 @@ Chart.register(...registerables);
          </div>
       </div>
 
-      <div class="bento-item col-6 chart-item">
+      <div class="bento-item col-4 chart-item">
          <div class="chart-header">
-            <h3 class="chart-title">💳 Financial Growth</h3>
-            <span class="chart-sub">Wallet Accumulation</span>
+            <h3 class="chart-title">⭕ Last Sabha Ratio</h3>
+            <span class="chart-sub">Present vs Absent vs Leave</span>
          </div>
-         <div class="chart-container">
-            <canvas #financeChart></canvas>
+         <div class="chart-container" style="height: 200px;">
+            <canvas #attPieChart></canvas>
+         </div>
+      </div>
+
+      <div class="bento-item col-12 chart-item">
+         <div class="chart-header">
+            <h3 class="chart-title">🏢 Activity-wise Contribution</h3>
+            <span class="chart-sub">Member Participation & Financial Collection</span>
+         </div>
+         <div class="activity-stats-grid">
+            <div class="chart-container" style="flex: 1; height: 300px;">
+               <canvas #activityChart></canvas>
+            </div>
+            <div class="activity-legend" *ngIf="activityData.length > 0">
+               <div *ngFor="let item of activityData" class="legend-item">
+                  <div class="legend-header">
+                     <span class="legend-dot"></span>
+                     <span class="legend-name">{{ item.name }}</span>
+                  </div>
+                  <div class="legend-stats">
+                     <span>👥 {{ item.count }} Members</span>
+                     <span class="amount-badge">₹{{ item.amount }}</span>
+                  </div>
+               </div>
+            </div>
          </div>
       </div>
 
@@ -245,7 +269,32 @@ Chart.register(...registerables);
     .rep-icon, .rep-bg { background: rgba(139, 92, 246, 0.1); color: #8B5CF6; }
     .rol-icon, .rol-bg { background: rgba(107, 114, 128, 0.1); color: #6B7280; }
 
+    .activity-stats-grid {
+       display: flex;
+       gap: 32px;
+       align-items: center;
+    }
+    .activity-legend {
+       flex: 1;
+       display: grid;
+       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+       gap: 16px;
+    }
+    .legend-item {
+       padding: 16px;
+       background: var(--bg-main);
+       border-radius: 16px;
+       border: 1px solid var(--border-color);
+    }
+    .legend-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+    .legend-name { font-weight: 800; font-size: 0.9rem; color: var(--text-dark); }
+    .legend-stats { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); }
+    .amount-badge { color: var(--success); background: rgba(16, 185, 129, 0.1); padding: 2px 8px; border-radius: 6px; }
+
     @media (max-width: 768px) {
+       .activity-stats-grid { flex-direction: column; }
+       .activity-legend { width: 100%; }
        .bento-grid { gap: 16px; }
        .stat-number { font-size: 2.2rem; }
        .operations-hub { padding: 24px; }
@@ -271,10 +320,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   isLoading = false;
 
   @ViewChild('attendanceChart') attendanceCanvas!: ElementRef;
-  @ViewChild('financeChart') financeCanvas!: ElementRef;
+  @ViewChild('attPieChart') attPieCanvas!: ElementRef;
+  @ViewChild('activityChart') activityCanvas!: ElementRef;
   
   private attChart: any;
-  private finChart: any;
+  private attPieChart: any;
+  private actChart: any;
+
+  activityData: any[] = [];
 
   async ngOnInit() {
     await this.loadStats();
@@ -287,17 +340,18 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   async loadStats() {
     this.isLoading = true;
     try {
-      const [stats, lastSabha, attTrends, finTrends] = await Promise.all([
+      const [stats, lastSabha, attTrends, actDist] = await Promise.all([
         this.supabase.getOrganizationStats(),
         this.supabase.getLastSabhaStats(),
         this.supabase.getWeeklyAttendanceTrends(),
-        this.supabase.getFinancialTrends()
+        this.supabase.getActivityDistribution()
       ]);
       
       this.report = stats;
       this.lastSabha = lastSabha;
+      this.activityData = actDist;
       
-      this.renderCharts(attTrends, finTrends);
+      this.renderCharts(attTrends, lastSabha, actDist);
     } catch (e) {
       console.error('Error loading stats:', e);
     } finally {
@@ -305,15 +359,16 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     }
   }
 
-  renderCharts(attData: any[], finData: any[]) {
+  renderCharts(attData: any[], lastSabha: any, actDist: any[]) {
     if (this.attChart) this.attChart.destroy();
-    if (this.finChart) this.finChart.destroy();
+    if (this.attPieChart) this.attPieChart.destroy();
+    if (this.actChart) this.actChart.destroy();
 
     const isDark = document.body.classList.contains('dark-theme');
     const textColor = isDark ? '#FDFCFC' : '#2F3035';
     const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
 
-    // Attendance Trend Chart
+    // Attendance Trend Chart (Line)
     this.attChart = new Chart(this.attendanceCanvas.nativeElement, {
       type: 'line',
       data: {
@@ -347,41 +402,53 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       }
     });
 
-    // Financial Trend Chart
-    this.finChart = new Chart(this.financeCanvas.nativeElement, {
-      type: 'line',
-      data: {
-        labels: finData.map(d => d.month),
-        datasets: [{
-          label: 'Total Balance',
-          data: finData.map(d => d.balance),
-          borderColor: '#10B981',
-          backgroundColor: 'rgba(16, 185, 129, 0.05)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 0,
-          borderWidth: 3
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { 
-            grid: { color: gridColor },
-            ticks: { 
-              color: textColor, 
-              font: { weight: 600 },
-              callback: (value) => '₹' + (Number(value) / 1000) + 'k'
-            }
-          },
-          x: { 
-            grid: { display: false },
-            ticks: { color: textColor, font: { weight: 600 } }
-          }
-        }
-      }
-    });
+    // Attendance Ratio (Pie)
+    if (lastSabha) {
+       this.attPieChart = new Chart(this.attPieCanvas.nativeElement, {
+         type: 'doughnut',
+         data: {
+           labels: ['Present', 'Absent', 'Leave'],
+           datasets: [{
+             data: [lastSabha.present, lastSabha.absent, lastSabha.leave],
+             backgroundColor: ['#10B981', '#EF4444', '#F59E0B'],
+             borderWidth: 0,
+             hoverOffset: 4
+           }]
+         },
+         options: {
+           responsive: true,
+           maintainAspectRatio: false,
+           plugins: {
+             legend: { position: 'bottom', labels: { color: textColor, font: { weight: 700, size: 10 } } }
+           },
+           cutout: '70%'
+         }
+       });
+    }
+
+    // Activity Distribution (Pie/Doughnut)
+    if (actDist && actDist.length > 0) {
+       this.actChart = new Chart(this.activityCanvas.nativeElement, {
+         type: 'pie',
+         data: {
+           labels: actDist.map(d => d.name),
+           datasets: [{
+             data: actDist.map(d => d.amount),
+             backgroundColor: [
+               '#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981'
+             ],
+             borderWidth: 2,
+             borderColor: isDark ? '#1e293b' : '#fff'
+           }]
+         },
+         options: {
+           responsive: true,
+           maintainAspectRatio: false,
+           plugins: {
+             legend: { display: false }
+           }
+         }
+       });
+    }
   }
 }

@@ -570,4 +570,48 @@ export class SupabaseService {
       total: records.length
     };
   }
+
+  async getActivityDistribution() {
+    if (this.isMockMode) {
+      return [
+        { name: 'Parsad', count: 5, amount: 500 },
+        { name: 'cricket tunamant', count: 12, amount: 1200 },
+        { name: 'Yuva Sabha', count: 45, amount: 4500 }
+      ];
+    }
+
+    // 1. Get all organizations/activities
+    const { data: orgs } = await this.supabase
+      .from('members')
+      .select('id, name')
+      .eq('role', 'Organization/Activity');
+
+    if (!orgs) return [];
+
+    // 2. Get all transactions
+    const { data: transactions } = await this.supabase
+      .from('wallet_transactions')
+      .select('description, amount, type, member_id');
+
+    if (!transactions) return [];
+
+    const distribution = orgs.map(org => {
+      const orgTag = `[${org.name}]`;
+      const relatedTx = transactions.filter(t => 
+        (t.member_id === org.id) || 
+        (t.description && t.description.includes(orgTag))
+      );
+
+      const uniqueMembers = new Set(relatedTx.filter(t => t.member_id && t.member_id !== org.id).map(t => t.member_id));
+      const totalAmount = relatedTx.filter(t => t.type === 'deposit').reduce((sum, t) => sum + Number(t.amount), 0);
+
+      return {
+        name: org.name,
+        count: uniqueMembers.size,
+        amount: totalAmount
+      };
+    }).filter(d => d.count > 0 || d.amount > 0);
+
+    return distribution;
+  }
 }

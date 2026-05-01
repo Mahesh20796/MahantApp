@@ -269,15 +269,11 @@ export class WalletManagementComponent implements OnInit {
   }
 
   onOrganizationChange() {
-    if (this.selectedOrganization && this.selectedOrganization !== 'general') {
-      this.selectedMember = null;
-    }
+    // Both can now be selected to allow tracking transactions for a member within an organization
   }
 
   onMemberChange() {
-    if (this.selectedMember) {
-      this.selectedOrganization = null;
-    }
+    // Both can now be selected to allow tracking transactions for a member within an organization
   }
 
   getFinalMemberId() {
@@ -426,9 +422,19 @@ export class WalletManagementComponent implements OnInit {
 
     try {
       this.processing = true;
+
+      // If both organization and member are selected, prepend org name to description for better tracking
+      let displayDescription = this.newTransaction.description;
+      if (this.selectedMember && this.selectedOrganization && this.selectedOrganization !== 'general') {
+        const org = this.members.find(m => m.id === this.selectedOrganization);
+        if (org) {
+          displayDescription = `[${org.name}] ${displayDescription}`;
+        }
+      }
+
       const tx = {
         amount: amount,
-        description: this.newTransaction.description,
+        description: displayDescription,
         type: this.transactionType,
         member_id: finalMemberId,
         category: finalMemberId ? 'MEMBER_ACTION' : 'ORG_GENERAL',
