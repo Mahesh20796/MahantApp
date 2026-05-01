@@ -30,7 +30,7 @@ interface AttendanceRecord {
          </div>
          <div style="background: var(--primary-soft); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(248, 121, 65, 0.2); flex: 1; min-width: 150px;">
             <div style="font-size: 0.65rem; color: var(--primary); font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Session Date</div>
-            <div style="font-size: 1rem; font-weight: 800; color: var(--text-dark);">{{ selectedDate | date:'dd-MM-yyyy' }}</div>
+            <div style="font-size: 1rem; font-weight: 800; color: var(--text-dark);">{{ selectedDate | date:'dd/MM/yyyy' }}</div>
             <div *ngIf="unmarkedCount > 0" style="font-size: 0.65rem; color: var(--warning); font-weight: 700; margin-top: 4px;">● {{ unmarkedCount }} members remaining</div>
             <div *ngIf="unmarkedCount === 0 && attendanceList.length > 0" style="font-size: 0.65rem; color: var(--success); font-weight: 700; margin-top: 4px;">● Everyone marked</div>
          </div>
@@ -41,13 +41,13 @@ interface AttendanceRecord {
           <label class="form-label" style="font-size: 0.75rem; color: var(--text-muted);">Active Sabha Module</label>
           <select class="form-control premium-input" [(ngModel)]="selectedSabhaId" (change)="onSabhaChange()">
             <option value="" disabled>-- Select Scheduled Sabha --</option>
-            <option *ngFor="let s of sabhas" [value]="s.id">{{ s.title }} ({{ s.sabha_date | date:'dd-MM-yyyy' }})</option>
+            <option *ngFor="let s of sabhas" [value]="s.id">{{ s.title }} ({{ s.sabha_date | date:'dd/MM/yyyy' }})</option>
           </select>
         </div>
         
         <div class="form-group" style="margin-bottom: 0;">
           <label class="form-label" style="font-size: 0.75rem; color: var(--text-muted);">Operational Date</label>
-          <input type="date" class="form-control premium-input" [(ngModel)]="selectedDate" (change)="loadAttendance()" [max]="maxDate" [disabled]="!!selectedSabhaId">
+          <input type="date" lang="en-IN" class="form-control premium-input" [(ngModel)]="selectedDate" (change)="loadAttendance()" [max]="maxDate" [disabled]="!!selectedSabhaId">
         </div>
         
         <div class="form-group" style="margin-bottom: 0;">

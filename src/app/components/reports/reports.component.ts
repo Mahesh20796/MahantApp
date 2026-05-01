@@ -50,11 +50,11 @@ import * as XLSX from 'xlsx';
             </div>
             <div style="flex: 1;">
               <label class="form-label">Start Date</label>
-              <input type="date" class="form-control" [(ngModel)]="attendanceRange.start">
+              <input type="date" lang="en-IN" class="form-control" [(ngModel)]="attendanceRange.start">
             </div>
             <div style="flex: 1;">
               <label class="form-label">End Date</label>
-              <input type="date" class="form-control" [(ngModel)]="attendanceRange.end">
+              <input type="date" lang="en-IN" class="form-control" [(ngModel)]="attendanceRange.end">
             </div>
             <button class="btn btn-primary generate-btn" (click)="fetchAttendanceSummary()">Generate</button>
           </div>
@@ -107,11 +107,11 @@ import * as XLSX from 'xlsx';
           <div class="filter-row mini-filter excellence-filters">
             <div style="flex: 1;">
               <label class="form-label">From Date</label>
-              <input type="date" class="form-control premium-input" [(ngModel)]="leaderboardRange.start">
+              <input type="date" lang="en-IN" class="form-control premium-input" [(ngModel)]="leaderboardRange.start">
             </div>
             <div style="flex: 1;">
               <label class="form-label">To Date</label>
-              <input type="date" class="form-control premium-input" [(ngModel)]="leaderboardRange.end">
+              <input type="date" lang="en-IN" class="form-control premium-input" [(ngModel)]="leaderboardRange.end">
             </div>
             <button class="btn btn-generate-report" (click)="fetchLeaderboard()" [disabled]="isLoadingLeaderboard">
                <span *ngIf="!isLoadingLeaderboard">⚡ Generate Report</span>
@@ -168,11 +168,11 @@ import * as XLSX from 'xlsx';
                <div style="display: flex; gap: 12px;">
                   <div style="flex: 1;">
                      <label class="form-label">Period Start</label>
-                     <input type="date" class="form-control" [(ngModel)]="financialRange.start">
+                     <input type="date" lang="en-IN" class="form-control" [(ngModel)]="financialRange.start">
                   </div>
                   <div style="flex: 1;">
                      <label class="form-label">Period End</label>
-                     <input type="date" class="form-control" [(ngModel)]="financialRange.end">
+                     <input type="date" lang="en-IN" class="form-control" [(ngModel)]="financialRange.end">
                   </div>
                </div>
                <button class="btn btn-primary" (click)="fetchFinancialReport()" style="height: 48px; justify-content: center;">Generate Range Summary</button>
@@ -240,7 +240,7 @@ import * as XLSX from 'xlsx';
                          </span>
                       </div>
                       <div style="font-size: 0.7rem; color: var(--text-muted); display: flex; gap: 12px;">
-                         <span>📅 {{ tx.date | date:'dd-MM-yyyy' }}</span>
+                         <span>📅 {{ tx.date | date:'dd/MM/yyyy' }}</span>
                          <span *ngIf="tx.reference" style="font-weight: 700; color: var(--primary);">👤 {{ tx.reference }}</span>
                       </div>
                    </div>
@@ -287,7 +287,7 @@ import * as XLSX from 'xlsx';
                          </span>
                       </div>
                       <div style="font-size: 0.7rem; color: var(--text-muted);">
-                         📅 {{ tx.date | date:'dd-MM-yyyy' }}
+                         📅 {{ tx.date | date:'dd/MM/yyyy' }}
                       </div>
                    </div>
                    <div *ngIf="memberTransactions.length > 5" style="text-align: center; font-size: 0.7rem; color: var(--text-muted); font-weight: 700; margin-top: 12px; cursor: pointer;">
@@ -894,7 +894,7 @@ export class ReportsComponent implements OnInit {
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
+    return `${day}/${month}/${year}`;
   }
 
   getFormattedDate(): string {
@@ -905,7 +905,7 @@ export class ReportsComponent implements OnInit {
      const hours = String(now.getHours()).padStart(2, '0');
      const minutes = String(now.getMinutes()).padStart(2, '0');
      const seconds = String(now.getSeconds()).padStart(2, '0');
-     return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+     return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
   }
 
   async exportToPDF(type: string) {

@@ -376,7 +376,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           const dt = new Date(d.date);
           const day = String(dt.getDate()).padStart(2, '0');
           const month = String(dt.getMonth() + 1).padStart(2, '0');
-          return `${day}-${month}`;
+          return `${day}/${month}`;
         }),
         datasets: [{
           label: 'Present Count',

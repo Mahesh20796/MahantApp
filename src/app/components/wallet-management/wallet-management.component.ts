@@ -55,7 +55,7 @@ import { SupabaseService } from '../../services/supabase.service';
       <div class="responsive-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: flex-start; margin-bottom: 16px;">
         <div class="form-group" style="margin: 0;">
           <label class="form-label">Transaction Date *</label>
-          <input type="date" class="form-control" [class.is-invalid]="submitted && !newTransaction.date" [(ngModel)]="newTransaction.date">
+          <input type="date" lang="en-IN" class="form-control" [class.is-invalid]="submitted && !newTransaction.date" [(ngModel)]="newTransaction.date">
           <div *ngIf="submitted && !newTransaction.date" class="invalid-feedback">Date required</div>
         </div>
         <div class="form-group" style="margin: 0;">
@@ -107,7 +107,7 @@ import { SupabaseService } from '../../services/supabase.service';
         </div>
         <div class="form-group">
           <label class="form-label">Activity Date</label>
-          <input type="date" class="form-control" [(ngModel)]="quickMember.activityDate">
+          <input type="date" lang="en-IN" class="form-control" [(ngModel)]="quickMember.activityDate">
         </div>
         <div style="display: flex; gap: 12px; margin-top: 28px;">
           <button class="btn" style="flex: 1; background: var(--bg-main); color: var(--text-dark); justify-content: center;" (click)="closeQuickAddMember()">Cancel</button>
@@ -153,7 +153,7 @@ import { SupabaseService } from '../../services/supabase.service';
           <tbody>
             <tr *ngFor="let t of transactions" class="table-row-hover">
               <td style="color: var(--text-muted); font-size: 0.85rem; font-weight: 700;">
-                {{ t.date | date:'dd-MM-yyyy' | uppercase }}
+                {{ t.date | date:'dd/MM/yyyy' | uppercase }}
                 <div style="font-size: 0.7rem; color: rgba(0,0,0,0.3);">{{ t.date | date:'shortTime' }}</div>
               </td>
               <td>
@@ -190,7 +190,7 @@ import { SupabaseService } from '../../services/supabase.service';
             <div class="mobile-card-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
                <div style="flex: 1;">
                   <div style="font-weight: 800; color: var(--text-dark); font-size: 1rem; margin-bottom: 2px; letter-spacing: -0.01em;">{{ t.description }}</div>
-                  <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">📅 {{ t.date | date:'dd-MM-yyyy' }}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">📅 {{ t.date | date:'dd/MM/yyyy' }}</div>
                </div>
                <div style="text-align: right;">
                   <div [style.color]="t.type === 'deposit' ? 'var(--success)' : 'var(--danger)'" style="font-weight: 900; font-size: 1.15rem; letter-spacing: -0.02em;">

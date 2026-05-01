@@ -57,7 +57,7 @@ import { Sabha } from '../../models/sabha.model';
             
             <div class="form-group" style="margin-bottom: 0;">
               <label class="form-label" style="font-weight: 800; color: var(--text-muted);">Sabha Date *</label>
-              <input type="date" class="form-control premium-input" formControlName="sabhaDate">
+              <input type="date" lang="en-IN" class="form-control premium-input" formControlName="sabhaDate">
             </div>
             
             <div class="form-group" style="margin-bottom: 0;">
@@ -105,7 +105,7 @@ import { Sabha } from '../../models/sabha.model';
               </td>
               <td>
                 <div style="font-weight: 600; color: var(--text-dark);">
-                  {{ s.sabhaDate ? (s.sabhaDate | date:'dd-MM-yyyy') : 'Unscheduled' }}
+                  {{ s.sabhaDate ? (s.sabhaDate | date:'dd/MM/yyyy') : 'Unscheduled' }}
                 </div>
               </td>
               <td>
@@ -139,7 +139,7 @@ import { Sabha } from '../../models/sabha.model';
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
             <div>
               <div style="font-weight: 700; color: var(--text-dark); font-size: 1rem;">{{s.title}}</div>
-              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">📅 {{ s.sabhaDate ? (s.sabhaDate | date:'dd-MM-yyyy') : 'Unscheduled' }} • 🕒 {{s.timeSchedule}}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">📅 {{ s.sabhaDate ? (s.sabhaDate | date:'dd/MM/yyyy') : 'Unscheduled' }} • 🕒 {{s.timeSchedule}}</div>
             </div>
             <span class="badge">{{s.sabhaType}}</span>
           </div>
