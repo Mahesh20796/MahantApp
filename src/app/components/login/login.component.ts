@@ -53,11 +53,6 @@ import { Router } from '@angular/router';
             </button>
           </form>
 
-          <div class="login-footer">
-             <a href="javascript:void(0)" class="footer-link">Forgot Password?</a>
-             <span class="divider"></span>
-             <a href="javascript:void(0)" class="footer-link">System Help</a>
-          </div>
         </div>
       </div>
     </div>
@@ -261,30 +256,6 @@ import { Router } from '@angular/router';
 
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-    .login-footer {
-      margin-top: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-    }
-
-    .footer-link {
-      color: #747d8c;
-      text-decoration: none;
-      font-size: 0.85rem;
-      font-weight: 600;
-      transition: color 0.2s;
-    }
-
-    .footer-link:hover { color: var(--login-accent); }
-
-    .divider {
-      width: 4px;
-      height: 4px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 50%;
-    }
 
     @keyframes slide-up {
       from { opacity: 0; transform: translateY(20px); }
