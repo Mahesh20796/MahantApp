@@ -618,7 +618,7 @@ export class SupabaseService {
     // 2. Get all transactions
     const { data: transactions } = await this.supabase
       .from('wallet_transactions')
-      .select('description, amount, type, member_id');
+      .select('description, amount, type, member_id, organization_id');
 
     if (!transactions) return [];
 
