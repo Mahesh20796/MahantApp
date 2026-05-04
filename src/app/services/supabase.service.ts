@@ -215,6 +215,35 @@ export class SupabaseService {
   }
 
   // ------------------------------------
+  // ORGANIZATIONS METHODS
+  // ------------------------------------
+  async getOrganizations() {
+    if (this.isMockMode) {
+      return [
+        { id: 'O1', name: 'Annual Festival', activity_date: '2026-04-09' },
+        { id: 'O2', name: 'Parsad', activity_date: '2026-04-10' }
+      ];
+    }
+    const { data, error } = await this.supabase
+      .from('organizations')
+      .select('*')
+      .order('name', { ascending: true });
+    if (error) {
+      console.error('Error fetching organizations:', error);
+      throw error;
+    }
+    return data || [];
+  }
+
+  async addOrganization(org: any) {
+    if (this.isMockMode) {
+      const newOrg = { ...org, id: 'O' + Date.now() };
+      return { data: [newOrg], error: null };
+    }
+    return await this.supabase.from('organizations').insert([org]).select();
+  }
+
+  // ------------------------------------
   // WALLET & TRANSACTIONS METHODS
   // ------------------------------------
   async getWalletTransactions() {
@@ -228,7 +257,8 @@ export class SupabaseService {
       .from('wallet_transactions')
       .select(`
         *,
-        members (name)
+        members (name),
+        organizations (name)
       `)
       .order('created_at', { ascending: false });
     
@@ -237,7 +267,7 @@ export class SupabaseService {
     return data.map(t => ({
       ...t,
       date: t.created_at,
-      reference: t.members?.name || t.reference || 'N/A'
+      reference: t.members?.name || t.organizations?.name || t.reference || 'N/A'
     }));
   }
 
@@ -581,10 +611,7 @@ export class SupabaseService {
     }
 
     // 1. Get all organizations/activities
-    const { data: orgs } = await this.supabase
-      .from('members')
-      .select('id, name')
-      .eq('role', 'Organization/Activity');
+    const orgs = await this.getOrganizations();
 
     if (!orgs) return [];
 
@@ -598,6 +625,7 @@ export class SupabaseService {
     const distribution = orgs.map(org => {
       const orgTag = `[${org.name}]`;
       const relatedTx = transactions.filter(t => 
+        (t.organization_id === org.id) ||
         (t.member_id === org.id) || 
         (t.description && t.description.includes(orgTag))
       );

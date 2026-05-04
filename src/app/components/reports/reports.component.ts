@@ -5,6 +5,7 @@ import { SupabaseService } from '../../services/supabase.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { Organization } from '../../models/organization.model';
 
 @Component({
   selector: 'app-reports',
@@ -213,7 +214,6 @@ import * as XLSX from 'xlsx';
                 <label class="form-label">Select Activity / Organization</label>
                 <select class="form-control" [(ngModel)]="selectedOrganization" (change)="fetchOrganizationReport()">
                    <option [value]="null">-- Choose Activity --</option>
-                   <option [value]="'general'">Organization General</option>
                    <option *ngFor="let m of getOrganizations()" [value]="m.id">{{ m.name }}</option>
                 </select>
              </div>
@@ -710,6 +710,7 @@ export class ReportsComponent implements OnInit {
   };
 
   members: any[] = [];
+  organizations: Organization[] = [];
   selectedOrganization: string | null = null;
   selectedMember: string | null = null;
   
@@ -721,7 +722,7 @@ export class ReportsComponent implements OnInit {
   orgNetBalance: number = 0;
 
   getOrganizations() {
-    return this.members.filter(m => m.role === 'Organization/Activity');
+    return this.organizations;
   }
 
   getRegularMembers() {
@@ -740,9 +741,12 @@ export class ReportsComponent implements OnInit {
   async ngOnInit() {
     await this.fetchAttendanceSummary();
     await this.fetchLeaderboard();
-    this.supabase.getMembers().then(m => {
-      this.members = m;
-    });
+    const [members, organizations] = await Promise.all([
+      this.supabase.getMembers(),
+      this.supabase.getOrganizations()
+    ]);
+    this.members = members;
+    this.organizations = organizations;
   }
 
   setPart(part: 'attendance' | 'financial' | 'general') {
@@ -802,23 +806,21 @@ export class ReportsComponent implements OnInit {
      }
 
      const allTx = await this.supabase.getWalletTransactions();
+     const org = this.organizations.find(o => o.id === this.selectedOrganization);
+     const orgName = org?.name;
      
-     if (this.selectedOrganization === 'general') {
-       this.orgTransactions = allTx.filter((t: any) => !t.member_id);
-     } else {
-       const org = this.members.find(m => m.id === this.selectedOrganization);
-        const orgName = org?.name;
-        this.orgTransactions = allTx.filter((t: any) => {
-          // Direct link to organization ID
-          if (t.member_id === this.selectedOrganization) return true;
-          
-          // Linked to a member but tagged with organization name in brackets [Org Name]
-          if (orgName && t.description && t.description.includes(`[${orgName}]`)) return true;
-          
-          return false;
-        });
-
-     }
+     this.orgTransactions = allTx.filter((t: any) => {
+       // Direct link to organization ID
+       if (t.organization_id === this.selectedOrganization) return true;
+       
+       // Legacy check: member_id used as org_id
+       if (t.member_id === this.selectedOrganization) return true;
+       
+       // Linked to a member but tagged with organization name in brackets [Org Name]
+       if (orgName && t.description && t.description.includes(`[${orgName}]`)) return true;
+       
+       return false;
+     });
      
      this.orgTotalContributions = this.orgTransactions
         .filter(t => t.type === 'deposit')
@@ -981,11 +983,9 @@ export class ReportsComponent implements OnInit {
       doc.save(`Rana_Mandal_Financial_${this.financialRange.start}.pdf`);
 
     } else if (type === 'org_report') {
-      let profileName = 'Organization General';
-      if (this.selectedOrganization !== 'general') {
-        const member = this.members.find(m => m.id === this.selectedOrganization);
-        if (member) profileName = member.name;
-      }
+      let profileName = 'Organization Report';
+      const org = this.organizations.find(o => o.id === this.selectedOrganization);
+      if (org) profileName = org.name;
       
       doc.text(`Activity Name: ${profileName}`, 14, 45);
       doc.setFontSize(10);

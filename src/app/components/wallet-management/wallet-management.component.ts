@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../services/supabase.service';
+import { Organization } from '../../models/organization.model';
 
 @Component({
   selector: 'app-wallet-management',
@@ -64,7 +65,7 @@ import { SupabaseService } from '../../services/supabase.service';
             <a href="javascript:void(0)" (click)="openQuickAddMember()" style="font-size: 0.7rem; color: var(--primary); font-weight: 800; text-decoration: none;">+ Add Org</a>
           </label>
           <select class="form-control" [(ngModel)]="selectedOrganization" (change)="onOrganizationChange()">
-            <option [value]="'general'">Organization General</option>
+            <option [value]="null">-- Select Organization --</option>
             <option *ngFor="let m of getOrganizations()" [value]="m.id">{{ m.name }}</option>
           </select>
         </div>
@@ -257,11 +258,12 @@ export class WalletManagementComponent implements OnInit {
   };
 
   // Two separate selections
-  selectedOrganization: string | null = 'general';
+  selectedOrganization: string | null = null;
   selectedMember: string | null = null;
+  organizations: Organization[] = [];
 
   getOrganizations() {
-    return this.members.filter(m => m.role === 'Organization/Activity');
+    return this.organizations;
   }
 
   getRegularMembers() {
@@ -278,8 +280,8 @@ export class WalletManagementComponent implements OnInit {
 
   getFinalMemberId() {
     if (this.selectedMember) return this.selectedMember;
-    if (this.selectedOrganization && this.selectedOrganization !== 'general') return this.selectedOrganization;
-    return null; // Organization General
+    if (this.selectedOrganization) return this.selectedOrganization;
+    return null;
   }
 
   dropdownOpen = false;
@@ -302,14 +304,16 @@ export class WalletManagementComponent implements OnInit {
   async loadData() {
     try {
       this.loading = true;
-      const [stats, transactions, members] = await Promise.all([
+      const [stats, transactions, members, organizations] = await Promise.all([
         this.supabase.getOrganizationStats(),
         this.supabase.getWalletTransactions(),
-        this.supabase.getMembers()
+        this.supabase.getMembers(),
+        this.supabase.getOrganizations()
       ]);
       this.stats = stats;
       this.transactions = transactions;
       this.members = members;
+      this.organizations = organizations;
     } catch (e) {
       console.error(e);
     } finally {
@@ -321,7 +325,7 @@ export class WalletManagementComponent implements OnInit {
     this.transactionType = type;
     this.showTransactionForm = true;
     this.submitted = false;
-    this.selectedOrganization = 'general';
+    this.selectedOrganization = null;
     this.selectedMember = null;
     this.newTransaction = { 
       amount: null, 
@@ -358,34 +362,26 @@ export class WalletManagementComponent implements OnInit {
     try {
       const payload = {
         name: this.quickMember.name,
-        contact_details: '0000000000',
-        email_id: `org${Date.now()}@sabha.local`,
-        photo: '',
-        address: 'N/A',
-        role: 'Organization/Activity',
-        sabha_name: 'Organization General',
-        status: 'Active',
-        password: 'password123',
-        joining_date: this.quickMember.activityDate || null
+        activity_date: this.quickMember.activityDate || null
       };
 
-      const res = await this.supabase.addMember(payload);
+      const res = await this.supabase.addOrganization(payload);
       if (res && res.error) throw res.error;
 
-      // Reload members list to include the newly created one
-      this.members = await this.supabase.getMembers();
+      // Reload organizations list
+      this.organizations = await this.supabase.getOrganizations();
 
-      // Find the new member ID and automatically select it
-      let newMemId = null;
+      // Find the new organization ID and automatically select it
+      let newOrgId = null;
       if (res && res.data && res.data.length > 0) {
-        newMemId = res.data[0].id;
+        newOrgId = res.data[0].id;
       } else {
-        const match = this.members.find(m => m.name === this.quickMember.name && m.role === 'Organization/Activity');
-        if (match) newMemId = match.id;
+        const match = this.organizations.find(o => o.name === this.quickMember.name);
+        if (match) newOrgId = match.id;
       }
 
-      if (newMemId) {
-        this.selectedOrganization = newMemId;
+      if (newOrgId) {
+        this.selectedOrganization = newOrgId;
         this.selectedMember = null;
       }
 
@@ -425,18 +421,19 @@ export class WalletManagementComponent implements OnInit {
 
       // If both organization and member are selected, prepend org name to description for better tracking
       let displayDescription = this.newTransaction.description;
-      if (this.selectedMember && this.selectedOrganization && this.selectedOrganization !== 'general') {
+      if (this.selectedMember && this.selectedOrganization) {
         const org = this.members.find(m => m.id === this.selectedOrganization);
         if (org) {
           displayDescription = `[${org.name}] ${displayDescription}`;
         }
       }
 
-      const tx = {
+      const tx: any = {
         amount: amount,
         description: displayDescription,
         type: this.transactionType,
-        member_id: finalMemberId,
+        member_id: this.selectedMember || null,
+        organization_id: this.selectedOrganization || null,
         category: finalMemberId ? 'MEMBER_ACTION' : 'ORG_GENERAL',
         status: 'COMPLETED',
         created_at: this.newTransaction.date
