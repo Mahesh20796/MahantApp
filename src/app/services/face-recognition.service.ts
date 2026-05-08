@@ -17,6 +17,7 @@ export class FaceRecognitionService {
     try {
       await Promise.all([
         faceapi.nets.tinyFaceDetector.loadFromUri(this.MODEL_URL),
+        faceapi.nets.ssdMobilenetv1.loadFromUri(this.MODEL_URL),
         faceapi.nets.faceLandmark68Net.loadFromUri(this.MODEL_URL),
         faceapi.nets.faceRecognitionNet.loadFromUri(this.MODEL_URL)
       ]);
@@ -31,14 +32,16 @@ export class FaceRecognitionService {
   async getFaceDescriptor(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement): Promise<Float32Array | null> {
     if (!this.modelsLoaded) await this.loadModels();
 
-    // Use optimized options for detection speed
-    // inputSize 224 is a good balance for web/mobile speed, scoreThreshold 0.4 is standard
-    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 });
+    // Increase inputSize to 320 for better accuracy on mobile, lower threshold to 0.1 for maximum sensitivity
+    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.1 });
     
     const detection = await faceapi.detectSingleFace(imageElement, options)
       .withFaceLandmarks()
       .withFaceDescriptor();
 
+    if (!detection) {
+      console.log('🔍 AI: No face detected in current frame.');
+    }
     return detection ? detection.descriptor : null;
   }
 
@@ -59,10 +62,26 @@ export class FaceRecognitionService {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = async () => {
-        const descriptor = await this.getFaceDescriptor(img);
-        resolve(descriptor);
+        if (!this.modelsLoaded) await this.loadModels();
+        // Use SSD for profile processing as it's more accurate and only done once
+        const detection = await faceapi.detectSingleFace(img, new faceapi.SsdMobilenetv1Options())
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+        
+        if (detection) {
+          console.log('✅ Profile descriptor generated using SSD model');
+          resolve(detection.descriptor);
+        } else {
+          // Fallback to Tiny if SSD fails
+          const tinyDescriptor = await this.getFaceDescriptor(img);
+          console.log(tinyDescriptor ? '⚠️ Profile descriptor generated using Tiny model' : '❌ Failed to detect face in profile photo');
+          resolve(tinyDescriptor);
+        }
       };
-      img.onerror = () => resolve(null);
+      img.onerror = () => {
+        console.error('❌ Failed to load profile image from base64');
+        resolve(null);
+      };
       img.src = base64String;
     });
   }

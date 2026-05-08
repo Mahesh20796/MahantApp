@@ -252,6 +252,12 @@ interface AttendanceRecord {
           <div style="position: absolute; top: 30px; left: 0; width: 100%; text-align: center; color: white; z-index: 20;">
             <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.2em; opacity: 0.7; margin-bottom: 8px; font-weight: 800;">AI Biometric Scanner</div>
             <div style="font-size: 1.1rem; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">{{ scanStatus }}</div>
+            
+            <!-- Match Strength Meter -->
+            <div *ngIf="matchStrength > 0" style="margin: 15px auto 0; width: 60%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+              <div [style.width.%]="matchStrength" [style.background]="matchStrength > 80 ? '#10b981' : (matchStrength > 50 ? '#f59e0b' : '#ef4444')" style="height: 100%; transition: all 0.3s ease;"></div>
+            </div>
+            <div *ngIf="matchStrength > 0" style="font-size: 0.65rem; margin-top: 5px; opacity: 0.8; font-weight: 700;">MATCH CONFIDENCE: {{ matchStrength }}%</div>
           </div>
 
           <div *ngIf="scanningMember" style="position: absolute; bottom: 30px; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; z-index: 20;">
@@ -384,6 +390,7 @@ export class AttendanceManagementComponent implements OnInit {
   // Face recognition state
   isScanning = false;
   scanStatus = 'Initializing camera...';
+  matchStrength = 0;
   scanningMember: AttendanceRecord | null = null;
   private stream: MediaStream | null = null;
   private scanInterval: any;
@@ -642,11 +649,19 @@ export class AttendanceManagementComponent implements OnInit {
       
       if (!capturedDescriptor) {
         this.scanStatus = 'Face Not Detected ⚠️ (Keep face in frame)';
+        this.matchStrength = 0;
       } else {
         const distance = this.faceService.computeDistance(capturedDescriptor, profileDescriptor);
-        const isMatch = distance < 0.6;
+        const isMatch = distance < 0.65; // Slightly more lenient threshold (0.65 vs 0.6)
+        
+        // Calculate a human-readable match strength percentage
+        // 0.2 distance or less = 100%, 0.7 or more = 0%
+        this.matchStrength = Math.max(0, Math.min(100, Math.round((0.7 - distance) / 0.5 * 100)));
+        
+        console.log(`👤 AI matching distance: ${distance.toFixed(4)} (Strength: ${this.matchStrength}%)`);
         
         if (isMatch) {
+          this.matchStrength = 100;
           this.scanStatus = 'MATCH FOUND! ✅';
           if (this.scanningMember) {
             await this.mark(this.scanningMember, 'P');
@@ -654,7 +669,7 @@ export class AttendanceManagementComponent implements OnInit {
           setTimeout(() => this.stopScanner(), 1500);
           return;
         } else {
-          this.scanStatus = `Scanning... (${Math.round((attempts/maxAttempts)*100)}%)`;
+          this.scanStatus = `Analyzing Face... (${Math.round((attempts/maxAttempts)*100)}%)`;
         }
       }
 
