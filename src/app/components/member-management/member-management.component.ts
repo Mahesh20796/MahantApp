@@ -216,21 +216,34 @@ import { Member } from '../../models/member.model';
       </div>
 
       <!-- Camera Overlay for Member Photo Capture -->
-      <div *ngIf="isScanning" class="camera-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
-        <div style="position: relative; width: 90%; max-width: 400px; aspect-ratio: 3/4; border-radius: 30px; overflow: hidden; border: 4px solid var(--primary); box-shadow: 0 0 50px rgba(248, 113, 113, 0.3);">
-          <video #videoElement autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
-          <div style="position: absolute; top: 20px; left: 0; width: 100%; text-align: center; color: white; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
-            {{ scanStatus }}
+      <div *ngIf="isScanning" class="camera-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(15px);">
+        <div class="camera-container" style="position: relative; width: 85%; max-width: 380px; aspect-ratio: 3/4; border-radius: 40px; overflow: hidden; border: 2px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+          <video #videoElement autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"></video>
+          
+          <!-- Modern Face Guide -->
+          <div class="face-guide">
+            <div class="corner top-left"></div>
+            <div class="corner top-right"></div>
+            <div class="corner bottom-left"></div>
+            <div class="corner bottom-right"></div>
+          </div>
+
+          <!-- Status Overlay -->
+          <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.6) 100%); pointer-events: none;"></div>
+
+          <div style="position: absolute; top: 30px; left: 0; width: 100%; text-align: center; color: white; z-index: 20;">
+            <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.2em; opacity: 0.7; margin-bottom: 8px; font-weight: 800;">Profile Registration</div>
+            <div style="font-size: 1.1rem; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">{{ scanStatus || 'Ready to Capture' }}</div>
           </div>
           
           <!-- Capture Button -->
-          <div style="position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: center;">
-            <button class="btn" (click)="capturePhoto()" style="width: 70px; height: 70px; border-radius: 50%; background: white; border: 5px solid rgba(248, 113, 113, 0.5); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(255,255,255,0.3);">
-              <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--primary);"></div>
+          <div style="position: absolute; bottom: 40px; width: 100%; display: flex; justify-content: center; z-index: 30;">
+            <button class="capture-trigger" (click)="capturePhoto()" aria-label="Take Photo">
+              <div class="inner-circle"></div>
             </button>
           </div>
         </div>
-        <button class="btn" (click)="stopCamera()" style="margin-top: 30px; background: rgba(255,255,255,0.1); color: white; border-radius: 50px; padding: 12px 30px; font-weight: 800; border: 1px solid rgba(255,255,255,0.2);">CANCEL</button>
+        <button class="btn" (click)="stopCamera()" style="margin-top: 40px; background: rgba(255,255,255,0.05); color: white; border-radius: 50px; padding: 14px 40px; font-weight: 800; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">CANCEL</button>
       </div>
 
     </div>
@@ -238,11 +251,54 @@ import { Member } from '../../models/member.model';
   `,
   styles: [`
     .camera-overlay {
-      animation: fadeIn 0.3s ease-out;
+      animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .face-guide {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 70%;
+      height: 60%;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .corner {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      transition: all 0.3s ease;
+    }
+    .top-left { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 12px 0 0 0; }
+    .top-right { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 12px 0 0; }
+    .bottom-left { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 12px; }
+    .bottom-right { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 12px 0; }
+    
+    .capture-trigger {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: white;
+      border: none;
+      padding: 6px;
+      cursor: pointer;
+      box-shadow: 0 0 25px rgba(255,255,255,0.2);
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .capture-trigger:active {
+      transform: scale(0.9);
+    }
+    .inner-circle {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 3px solid black;
+      background: white;
     }
     @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from { opacity: 0; backdrop-filter: blur(0px); }
+      to { opacity: 1; backdrop-filter: blur(15px); }
     }
     .badge-active { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
     .badge-inactive { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }

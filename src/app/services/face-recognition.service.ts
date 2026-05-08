@@ -31,9 +31,9 @@ export class FaceRecognitionService {
   async getFaceDescriptor(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement): Promise<Float32Array | null> {
     if (!this.modelsLoaded) await this.loadModels();
 
-    // Use more sensitive options for detection
-    // inputSize 512 is more accurate than 416, and scoreThreshold 0.3 is more inclusive
-    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.3 });
+    // Use optimized options for detection speed
+    // inputSize 224 is a good balance for web/mobile speed, scoreThreshold 0.4 is standard
+    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 });
     
     const detection = await faceapi.detectSingleFace(imageElement, options)
       .withFaceLandmarks()

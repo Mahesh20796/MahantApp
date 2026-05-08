@@ -231,20 +231,42 @@ interface AttendanceRecord {
       </button>
 
       <!-- Camera Overlay for Face Recognition -->
-      <div *ngIf="isScanning" class="camera-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
-        <div style="position: relative; width: 90%; max-width: 400px; aspect-ratio: 3/4; border-radius: 30px; overflow: hidden; border: 4px solid var(--primary); box-shadow: 0 0 50px rgba(248, 113, 113, 0.3);">
-          <video #videoElement autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
-          <div class="scan-line"></div>
-          <div style="position: absolute; top: 20px; left: 0; width: 100%; text-align: center; color: white; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
-            {{ scanStatus }}
+      <div *ngIf="isScanning" class="camera-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(15px);">
+        <div class="camera-container" [class.match-found]="scanStatus.includes('MATCH')" style="position: relative; width: 85%; max-width: 380px; aspect-ratio: 3/4; border-radius: 40px; overflow: hidden; border: 2px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+          <video #videoElement autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"></video>
+          
+          <!-- Modern Face Guide -->
+          <div class="face-guide">
+            <div class="corner top-left"></div>
+            <div class="corner top-right"></div>
+            <div class="corner bottom-left"></div>
+            <div class="corner bottom-right"></div>
           </div>
-          <div *ngIf="scanningMember" style="position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-            <div style="background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 12px; color: white; font-size: 0.9rem; font-weight: 700;">
-              Scanning: {{ scanningMember.memberName }}
+
+          <!-- Scanning Animation -->
+          <div class="scan-beam" *ngIf="!scanStatus.includes('MATCH')"></div>
+          
+          <!-- Status Overlay -->
+          <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.6) 100%); pointer-events: none;"></div>
+
+          <div style="position: absolute; top: 30px; left: 0; width: 100%; text-align: center; color: white; z-index: 20;">
+            <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.2em; opacity: 0.7; margin-bottom: 8px; font-weight: 800;">AI Biometric Scanner</div>
+            <div style="font-size: 1.1rem; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">{{ scanStatus }}</div>
+          </div>
+
+          <div *ngIf="scanningMember" style="position: absolute; bottom: 30px; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; z-index: 20;">
+            <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 12px 24px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 12px;">
+               <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; color: white; border: 2px solid rgba(255,255,255,0.2);">
+                 {{ scanningMember.memberName.charAt(0) }}
+               </div>
+               <div style="color: white; font-size: 0.95rem; font-weight: 700; letter-spacing: -0.01em;">{{ scanningMember.memberName }}</div>
             </div>
           </div>
         </div>
-        <button class="btn" (click)="stopScanner()" style="margin-top: 30px; background: white; color: black; border-radius: 50px; padding: 12px 30px; font-weight: 800;">CANCEL SCAN</button>
+
+        <button class="btn" (click)="stopScanner()" style="margin-top: 40px; background: rgba(255,255,255,0.05); color: white; border-radius: 50px; padding: 14px 40px; font-weight: 800; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); transition: all 0.2s;">
+          <span style="opacity: 0.7;">✕</span> &nbsp; ABORT SCAN
+        </button>
       </div>
     </div>
   `,
@@ -266,26 +288,63 @@ interface AttendanceRecord {
       z-index: 100;
     }
     .camera-overlay {
-      animation: fadeIn 0.3s ease-out;
+      animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .scan-line {
+    .camera-container {
+      transition: all 0.5s ease;
+    }
+    .camera-container.match-found {
+      border-color: #10b981;
+      box-shadow: 0 0 100px rgba(16, 185, 129, 0.4);
+      transform: scale(1.02);
+    }
+    .face-guide {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 70%;
+      height: 60%;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .corner {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      transition: all 0.3s ease;
+    }
+    .match-found .corner {
+      border-color: #10b981;
+      width: 40px;
+      height: 40px;
+    }
+    .top-left { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 12px 0 0 0; }
+    .top-right { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 12px 0 0; }
+    .bottom-left { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 12px; }
+    .bottom-right { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 12px 0; }
+    
+    .scan-beam {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
-      height: 4px;
-      background: var(--primary);
-      box-shadow: 0 0 15px var(--primary);
-      animation: scan 2s linear infinite;
-      z-index: 10;
+      height: 100px;
+      background: linear-gradient(to bottom, rgba(248, 113, 113, 0.2), transparent);
+      border-top: 2px solid var(--primary);
+      box-shadow: 0 -10px 20px rgba(248, 113, 113, 0.3);
+      animation: scan-beam 2.5s ease-in-out infinite;
+      z-index: 5;
     }
-    @keyframes scan {
-      0% { top: 0; }
-      100% { top: 100%; }
+    @keyframes scan-beam {
+      0% { transform: translateY(-100px); }
+      50% { transform: translateY(500px); }
+      100% { transform: translateY(-100px); }
     }
     @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from { opacity: 0; backdrop-filter: blur(0px); }
+      to { opacity: 1; backdrop-filter: blur(15px); }
     }
     .face-mark-btn {
       position: absolute;
@@ -552,7 +611,7 @@ export class AttendanceManagementComponent implements OnInit {
       this.stream.getTracks().forEach(track => track.stop());
     }
     if (this.scanInterval) {
-      clearInterval(this.scanInterval);
+      clearTimeout(this.scanInterval);
     }
   }
 
@@ -572,28 +631,26 @@ export class AttendanceManagementComponent implements OnInit {
     let attempts = 0;
     const maxAttempts = 30; // ~15 seconds at 500ms intervals
 
-    this.scanInterval = setInterval(async () => {
+    const detect = async () => {
       if (!this.isScanning || !this.videoElement) return;
-      
+
       const capturedDescriptor = await this.faceService.getFaceDescriptor(this.videoElement.nativeElement);
+      
+      if (!this.isScanning) return; // Check again after await
+
+      attempts++;
       
       if (!capturedDescriptor) {
         this.scanStatus = 'Face Not Detected ⚠️ (Keep face in frame)';
-        // We still count attempts to avoid infinite loops, but we show the warning
-        attempts++;
       } else {
-        attempts++;
         const distance = this.faceService.computeDistance(capturedDescriptor, profileDescriptor);
         const isMatch = distance < 0.6;
         
         if (isMatch) {
           this.scanStatus = 'MATCH FOUND! ✅';
-          clearInterval(this.scanInterval);
-          
           if (this.scanningMember) {
             await this.mark(this.scanningMember, 'P');
           }
-          
           setTimeout(() => this.stopScanner(), 1500);
           return;
         } else {
@@ -603,11 +660,15 @@ export class AttendanceManagementComponent implements OnInit {
 
       if (attempts > maxAttempts) {
         this.scanStatus = 'Timeout: Face Not Recognized';
-        clearInterval(this.scanInterval);
         setTimeout(() => this.stopScanner(), 2000);
         return;
       }
-    }, 500);
+
+      // Schedule next detection after this one finishes
+      this.scanInterval = setTimeout(detect, 100);
+    };
+
+    detect();
   }
 }
 
