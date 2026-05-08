@@ -1,14 +1,16 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../services/supabase.service';
 import { AuthService } from '../../services/auth.service';
+import { FaceRecognitionService } from '../../services/face-recognition.service';
 
 interface AttendanceRecord {
   memberId: string;
   memberName: string;
   role: string;
   memberStatus: string;
+  photo?: string;
   status: 'P' | 'A' | 'L' | null;
   timestamp: Date | null;
 }
@@ -133,15 +135,19 @@ interface AttendanceRecord {
           <div *ngFor="let record of paginatedAttendanceList" class="mobile-card" 
                style="border: 1px solid var(--border-color); background: var(--bg-card); border-radius: 20px; padding: 18px; box-shadow: var(--shadow-sm); transition: all 0.2s;">
             <div class="mobile-card-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-              <div style="display: flex; align-items: center; gap: 14px;">
-                <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--primary); border: 1px solid rgba(248, 121, 65, 0.1);">
-                  {{ record.memberName ? record.memberName.charAt(0) : '?' }}
+                <div style="position: relative;">
+                  <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--primary); border: 1px solid rgba(248, 121, 65, 0.1); overflow: hidden;">
+                    <img *ngIf="record.photo" [src]="record.photo" style="width: 100%; height: 100%; object-fit: cover;">
+                    <span *ngIf="!record.photo">{{ record.memberName ? record.memberName.charAt(0) : '?' }}</span>
+                  </div>
+                  <button *ngIf="record.photo && !record.status" class="face-mark-btn" (click)="startScanner(record)" title="Mark with Face Recognition">
+                    📸
+                  </button>
                 </div>
                 <div>
                   <div style="font-weight: 800; color: var(--text-dark); font-size: 1.05rem; letter-spacing: -0.01em;">{{ record.memberName }}</div>
                   <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">{{ record.role }}</div>
                 </div>
-              </div>
               <div style="text-align: right;">
                  <span *ngIf="record.status" class="badge" 
                        [style.background]="record.status === 'P' ? '#DCFCE7' : (record.status === 'A' ? '#FEE2E2' : '#FEF3C7')"
@@ -215,6 +221,23 @@ interface AttendanceRecord {
         <span style="font-size: 1.2rem;">💾</span>
         <span style="font-size: 0.55rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em;">SAVE</span>
       </button>
+
+      <!-- Camera Overlay for Face Recognition -->
+      <div *ngIf="isScanning" class="camera-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+        <div style="position: relative; width: 90%; max-width: 400px; aspect-ratio: 3/4; border-radius: 30px; overflow: hidden; border: 4px solid var(--primary); box-shadow: 0 0 50px rgba(248, 113, 113, 0.3);">
+          <video #videoElement autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+          <div class="scan-line"></div>
+          <div style="position: absolute; top: 20px; left: 0; width: 100%; text-align: center; color: white; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+            {{ scanStatus }}
+          </div>
+          <div *ngIf="scanningMember" style="position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div style="background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 12px; color: white; font-size: 0.9rem; font-weight: 700;">
+              Scanning: {{ scanningMember.memberName }}
+            </div>
+          </div>
+        </div>
+        <button class="btn" (click)="stopScanner()" style="margin-top: 30px; background: white; color: black; border-radius: 50px; padding: 12px 30px; font-weight: 800;">CANCEL SCAN</button>
+      </div>
     </div>
   `,
   styles: [`
@@ -234,11 +257,54 @@ interface AttendanceRecord {
       box-shadow: 0 12px 32px rgba(248, 113, 113, 0.4);
       z-index: 100;
     }
+    .camera-overlay {
+      animation: fadeIn 0.3s ease-out;
+    }
+    .scan-line {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: var(--primary);
+      box-shadow: 0 0 15px var(--primary);
+      animation: scan 2s linear infinite;
+      z-index: 10;
+    }
+    @keyframes scan {
+      0% { top: 0; }
+      100% { top: 100%; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .face-mark-btn {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      border: 2px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      z-index: 5;
+    }
   `]
 })
 export class AttendanceManagementComponent implements OnInit {
   supabaseService = inject(SupabaseService);
   auth = inject(AuthService);
+  faceService = inject(FaceRecognitionService);
+  
+  @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
   
   sabhas: any[] = [];
   selectedSabhaId: string = '';
@@ -247,6 +313,13 @@ export class AttendanceManagementComponent implements OnInit {
   attendanceList: AttendanceRecord[] = [];
   isLoading = false;
   maxDate: string = '';
+
+  // Face recognition state
+  isScanning = false;
+  scanStatus = 'Initializing camera...';
+  scanningMember: AttendanceRecord | null = null;
+  private stream: MediaStream | null = null;
+  private scanInterval: any;
 
   constructor() {
     const now = new Date();
@@ -346,6 +419,7 @@ export class AttendanceManagementComponent implements OnInit {
             memberName: m.name,
             role: m.role,
             memberStatus: m.status,
+            photo: m.photo,
             status: att ? att.status : null,
             // Strip timezone info to keep "Visual Sync" (local digits) stable
             timestamp: att ? new Date(att.time_marked.replace(/Z|[-+]\d{2}(:?\d{2})?$/, '')) : null
@@ -429,6 +503,93 @@ export class AttendanceManagementComponent implements OnInit {
     } finally {
       this.isLoading = false;
     }
+  }
+
+  // Face Recognition Methods
+  async startScanner(record: AttendanceRecord) {
+    if (!record.photo) {
+      alert('This member does not have a profile photo for face recognition.');
+      return;
+    }
+
+    this.scanningMember = record;
+    this.isScanning = true;
+    this.scanStatus = 'Loading AI Models...';
+
+    try {
+      await this.faceService.loadModels();
+      this.scanStatus = 'Opening Camera...';
+
+      this.stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } 
+      });
+
+      if (this.videoElement) {
+        this.videoElement.nativeElement.srcObject = this.stream;
+        this.scanStatus = 'Scanning Face...';
+        this.beginDetection();
+      }
+    } catch (err) {
+      console.error('Camera error:', err);
+      this.scanStatus = 'Error accessing camera';
+      alert('Could not access camera. Please ensure you have given permission.');
+      this.stopScanner();
+    }
+  }
+
+  stopScanner() {
+    this.isScanning = false;
+    this.scanningMember = null;
+    if (this.stream) {
+      this.stream.getTracks().forEach(track => track.stop());
+    }
+    if (this.scanInterval) {
+      clearInterval(this.scanInterval);
+    }
+  }
+
+  private async beginDetection() {
+    if (!this.scanningMember || !this.scanningMember.photo) return;
+
+    this.scanStatus = 'Processing Profile...';
+    const profileDescriptor = await this.faceService.createDescriptorFromBase64(this.scanningMember.photo);
+    
+    if (!profileDescriptor) {
+      this.scanStatus = 'Invalid Profile Photo';
+      setTimeout(() => this.stopScanner(), 2000);
+      return;
+    }
+
+    this.scanStatus = 'Aligning Face...';
+    let attempts = 0;
+    const maxAttempts = 30; // ~15 seconds at 500ms intervals
+
+    this.scanInterval = setInterval(async () => {
+      if (!this.isScanning || !this.videoElement) return;
+      
+      attempts++;
+      if (attempts > maxAttempts) {
+        this.scanStatus = 'Timeout: Face Not Recognized';
+        clearInterval(this.scanInterval);
+        setTimeout(() => this.stopScanner(), 2000);
+        return;
+      }
+
+      const isMatch = await this.faceService.compareFaces(this.videoElement.nativeElement, profileDescriptor);
+      
+      if (isMatch) {
+        this.scanStatus = 'MATCH FOUND! ✅';
+        clearInterval(this.scanInterval);
+        
+        if (this.scanningMember) {
+          await this.mark(this.scanningMember, 'P');
+        }
+        
+        setTimeout(() => this.stopScanner(), 1500);
+      } else {
+        this.scanStatus = `Scanning... (${Math.round((attempts/maxAttempts)*100)}%)`;
+      }
+    }, 500);
   }
 }
 
