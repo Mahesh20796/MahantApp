@@ -75,8 +75,16 @@ interface AttendanceRecord {
             <tr *ngFor="let record of paginatedAttendanceList" class="table-row-hover">
               <td>
                 <div style="display: flex; align-items: center; gap: 14px;">
-                   <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--primary); font-size: 0.9rem; border: 1px solid var(--border-color);">
-                      {{ record.memberName ? record.memberName.charAt(0) : '?' }}
+                   <div style="position: relative;">
+                     <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--primary); font-size: 0.9rem; border: 1px solid var(--border-color); overflow: hidden;">
+                        <img *ngIf="record.photo" [src]="record.photo" style="width: 100%; height: 100%; object-fit: cover;">
+                        <span *ngIf="!record.photo">{{ record.memberName ? record.memberName.charAt(0) : '?' }}</span>
+                     </div>
+                     <button *ngIf="record.photo && !record.status" class="face-mark-btn" 
+                             style="width: 24px; height: 24px; font-size: 0.7rem; top: -5px; right: -5px;"
+                             (click)="startScanner(record)" title="Mark with Face Recognition">
+                       📸
+                     </button>
                    </div>
                    <div>
                       <div style="font-weight: 700; color: var(--text-dark); font-size: 0.95rem;">{{ record.memberName }}</div>

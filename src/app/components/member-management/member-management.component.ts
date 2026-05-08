@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { SupabaseService } from '../../services/supabase.service';
 import { AuthService } from '../../services/auth.service';
+import { FaceRecognitionService } from '../../services/face-recognition.service';
 import { Member } from '../../models/member.model';
 
 @Component({
@@ -217,6 +218,7 @@ export class MemberManagementComponent implements OnInit {
   selectedMemberIds: Set<string> = new Set();
   supabaseService = inject(SupabaseService);
   auth = inject(AuthService);
+  faceService = inject(FaceRecognitionService);
   fb = inject(FormBuilder);
   
   members: Member[] = [];
@@ -316,12 +318,33 @@ export class MemberManagementComponent implements OnInit {
     this.editingId = null;
   }
 
-  onFileChange(event: any) {
+  async onFileChange(event: any) {
     const file = event.target.files[0];
     if (file) {
+      this.isLoading = true;
       const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.memberForm.patchValue({ photo: e.target.result });
+      reader.onload = async (e: any) => {
+        const base64 = e.target.result;
+        
+        try {
+          // Validate if the photo contains a face
+          await this.faceService.loadModels();
+          const descriptor = await this.faceService.createDescriptorFromBase64(base64);
+          
+          if (!descriptor) {
+            alert('❌ Face Not Detected! Please upload a clear photo of the member\'s face. Attendance recognition will not work without a valid face photo.');
+            this.memberForm.patchValue({ photo: '' });
+          } else {
+            this.memberForm.patchValue({ photo: base64 });
+            console.log('✅ Face validated successfully');
+          }
+        } catch (err) {
+          console.error('Face validation error:', err);
+          // Fallback if AI fails to load or run
+          this.memberForm.patchValue({ photo: base64 });
+        } finally {
+          this.isLoading = false;
+        }
       };
       reader.readAsDataURL(file);
     }
