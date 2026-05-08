@@ -575,27 +575,37 @@ export class AttendanceManagementComponent implements OnInit {
     this.scanInterval = setInterval(async () => {
       if (!this.isScanning || !this.videoElement) return;
       
-      attempts++;
+      const capturedDescriptor = await this.faceService.getFaceDescriptor(this.videoElement.nativeElement);
+      
+      if (!capturedDescriptor) {
+        this.scanStatus = 'Face Not Detected ⚠️ (Keep face in frame)';
+        // We still count attempts to avoid infinite loops, but we show the warning
+        attempts++;
+      } else {
+        attempts++;
+        const distance = faceapi.euclideanDistance(capturedDescriptor, profileDescriptor);
+        const isMatch = distance < 0.6;
+        
+        if (isMatch) {
+          this.scanStatus = 'MATCH FOUND! ✅';
+          clearInterval(this.scanInterval);
+          
+          if (this.scanningMember) {
+            await this.mark(this.scanningMember, 'P');
+          }
+          
+          setTimeout(() => this.stopScanner(), 1500);
+          return;
+        } else {
+          this.scanStatus = `Scanning... (${Math.round((attempts/maxAttempts)*100)}%)`;
+        }
+      }
+
       if (attempts > maxAttempts) {
         this.scanStatus = 'Timeout: Face Not Recognized';
         clearInterval(this.scanInterval);
         setTimeout(() => this.stopScanner(), 2000);
         return;
-      }
-
-      const isMatch = await this.faceService.compareFaces(this.videoElement.nativeElement, profileDescriptor);
-      
-      if (isMatch) {
-        this.scanStatus = 'MATCH FOUND! ✅';
-        clearInterval(this.scanInterval);
-        
-        if (this.scanningMember) {
-          await this.mark(this.scanningMember, 'P');
-        }
-        
-        setTimeout(() => this.stopScanner(), 1500);
-      } else {
-        this.scanStatus = `Scanning... (${Math.round((attempts/maxAttempts)*100)}%)`;
       }
     }, 500);
   }

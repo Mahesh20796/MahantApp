@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { SupabaseService } from '../../services/supabase.service';
@@ -27,13 +27,18 @@ import { Member } from '../../models/member.model';
         <form [formGroup]="memberForm" (ngSubmit)="onSubmit()">
           <!-- Photo & Basic Identity -->
           <div class="responsive-grid" style="grid-template-columns: 120px 1fr 1.5fr 1.5fr; gap: 24px; margin-bottom: 32px;">
-            <div (click)="photoInput.click()" style="width: 120px; height: 120px; border-radius: 12px; background: var(--bg-main); border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; margin: 0 auto;">
-              <img *ngIf="memberForm.get('photo')?.value" [src]="memberForm.get('photo')?.value" style="width: 100%; height: 100%; object-fit: cover;">
-              <div *ngIf="!memberForm.get('photo')?.value" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
-                <span style="font-size: 2rem; opacity: 0.3;">📸</span>
-                <span style="font-size: 0.6rem; font-weight: 800; color: #ef4444;">REQUIRED *</span>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div (click)="photoInput.click()" style="width: 120px; height: 120px; border-radius: 12px; background: var(--bg-main); border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; margin: 0 auto; position: relative;">
+                <img *ngIf="memberForm.get('photo')?.value" [src]="memberForm.get('photo')?.value" style="width: 100%; height: 100%; object-fit: cover;">
+                <div *ngIf="!memberForm.get('photo')?.value" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                  <span style="font-size: 2rem; opacity: 0.3;">🖼️</span>
+                  <span style="font-size: 0.6rem; font-weight: 800; color: #ef4444;">REQUIRED *</span>
+                </div>
+                <input #photoInput type="file" (change)="onFileChange($event)" hidden accept="image/*">
               </div>
-              <input #photoInput type="file" (change)="onFileChange($event)" hidden accept="image/*">
+              <button type="button" class="btn" (click)="startCamera()" style="font-size: 0.75rem; padding: 8px; width: 100%; background: var(--primary-soft); color: var(--primary); border: 1px solid rgba(248, 121, 65, 0.2); border-radius: 8px;">
+                📸 Use Camera
+              </button>
             </div>
             
             <div style="display: flex; flex-direction: column; gap: 20px;">
@@ -210,9 +215,38 @@ import { Member } from '../../models/member.model';
           <button (click)="selectedMemberIds.clear()" style="background: transparent; border: none; color: white; cursor: pointer; font-size: 1.2rem; padding: 0 8px;">✕</button>
       </div>
 
+      <!-- Camera Overlay for Member Photo Capture -->
+      <div *ngIf="isScanning" class="camera-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+        <div style="position: relative; width: 90%; max-width: 400px; aspect-ratio: 3/4; border-radius: 30px; overflow: hidden; border: 4px solid var(--primary); box-shadow: 0 0 50px rgba(248, 113, 113, 0.3);">
+          <video #videoElement autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+          <div style="position: absolute; top: 20px; left: 0; width: 100%; text-align: center; color: white; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+            {{ scanStatus }}
+          </div>
+          
+          <!-- Capture Button -->
+          <div style="position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: center;">
+            <button class="btn" (click)="capturePhoto()" style="width: 70px; height: 70px; border-radius: 50%; background: white; border: 5px solid rgba(248, 113, 113, 0.5); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(255,255,255,0.3);">
+              <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--primary);"></div>
+            </button>
+          </div>
+        </div>
+        <button class="btn" (click)="stopCamera()" style="margin-top: 30px; background: rgba(255,255,255,0.1); color: white; border-radius: 50px; padding: 12px 30px; font-weight: 800; border: 1px solid rgba(255,255,255,0.2);">CANCEL</button>
+      </div>
+
     </div>
 
-  `
+  `,
+  styles: [`
+    .camera-overlay {
+      animation: fadeIn 0.3s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .badge-active { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+    .badge-inactive { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+  `]
 })
 export class MemberManagementComponent implements OnInit {
   selectedMemberIds: Set<string> = new Set();
@@ -221,6 +255,8 @@ export class MemberManagementComponent implements OnInit {
   faceService = inject(FaceRecognitionService);
   fb = inject(FormBuilder);
   
+  @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
+
   members: Member[] = [];
   rolesList: any[] = [];
   sabhaList: string[] = ['Yuva Sabha', 'Bal Sabha', 'Sanyukt sabha', 'Yuvti Sabha', 'Balika Sabha'];
@@ -228,6 +264,11 @@ export class MemberManagementComponent implements OnInit {
   editingId: string | null = null;
   searchQuery: string = '';
   isLoading = false;
+
+  // Camera state
+  isScanning = false;
+  scanStatus = '';
+  private stream: MediaStream | null = null;
 
   get isAdmin() {
     const role = this.auth.userRole?.trim() || '';
@@ -332,8 +373,11 @@ export class MemberManagementComponent implements OnInit {
           const descriptor = await this.faceService.createDescriptorFromBase64(base64);
           
           if (!descriptor) {
-            alert('❌ Face Not Detected! Please upload a clear photo of the member\'s face. Attendance recognition will not work without a valid face photo.');
-            this.memberForm.patchValue({ photo: '' });
+            if (confirm('⚠️ Face Not Detected! Attendance recognition might not work with this photo. Do you want to use it anyway?')) {
+              this.memberForm.patchValue({ photo: base64 });
+            } else {
+              this.memberForm.patchValue({ photo: '' });
+            }
           } else {
             this.memberForm.patchValue({ photo: base64 });
             console.log('✅ Face validated successfully');
@@ -517,6 +561,72 @@ export class MemberManagementComponent implements OnInit {
       alert('Bulk deletion failed.');
     } finally {
       this.isLoading = false;
+    }
+  }
+
+  // Camera Methods
+  async startCamera() {
+    this.isScanning = true;
+    this.scanStatus = 'Accessing Camera...';
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } 
+      });
+      if (this.videoElement) {
+        this.videoElement.nativeElement.srcObject = this.stream;
+        this.scanStatus = 'Ready to Capture';
+      }
+    } catch (err) {
+      console.error('Camera error:', err);
+      alert('Could not access camera.');
+      this.stopCamera();
+    }
+  }
+
+  stopCamera() {
+    this.isScanning = false;
+    if (this.stream) {
+      this.stream.getTracks().forEach(track => track.stop());
+      this.stream = null;
+    }
+  }
+
+  async capturePhoto() {
+    if (!this.videoElement) return;
+    
+    this.scanStatus = 'Validating Face...';
+    const video = this.videoElement.nativeElement;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const base64 = canvas.toDataURL('image/jpeg', 0.8);
+    
+    try {
+      await this.faceService.loadModels();
+      const descriptor = await this.faceService.getFaceDescriptor(video);
+      
+      if (!descriptor) {
+        if (confirm('⚠️ Face Not Detected in capture! Attendance recognition might not work. Use this photo anyway?')) {
+          this.memberForm.patchValue({ photo: base64 });
+          this.stopCamera();
+        } else {
+          this.scanStatus = 'Face Not Detected';
+        }
+      } else {
+        this.memberForm.patchValue({ photo: base64 });
+        this.stopCamera();
+        alert('✅ Photo captured and face validated successfully!');
+      }
+    } catch (err) {
+      console.error('Face capture error:', err);
+      // If AI fails, allow capture anyway but warn
+      this.memberForm.patchValue({ photo: base64 });
+      this.stopCamera();
+      alert('Photo captured (Validation bypassed due to system error).');
     }
   }
 }
