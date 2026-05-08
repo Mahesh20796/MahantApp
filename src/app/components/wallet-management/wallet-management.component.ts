@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../services/supabase.service';
 import { Organization } from '../../models/organization.model';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-wallet-management',
@@ -173,7 +174,14 @@ import { Organization } from '../../models/organization.model';
                 {{ t.type === 'deposit' ? '+' : '-' }} ₹{{ t.amount | number:'1.1-1' }}
               </td>
               <td style="text-align: right;"><span class="badge badge-active">{{ t.status || 'COMPLETED' }}</span></td>
-              <td style="text-align: right;">
+              <td style="text-align: right; display: flex; gap: 8px; justify-content: flex-end;">
+                <button *ngIf="t.members?.contact_details && t.type === 'deposit'" 
+                        class="btn" 
+                        (click)="notify.sendDonationReceipt(t.members.name, t.members.contact_details, t.amount, t.category, t.description)"
+                        style="padding: 6px 10px; background: #e7f3ef; border: 1px solid #d1e7dd; border-radius: 6px;" 
+                        title="Send WhatsApp Receipt">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" style="width: 14px; height: 14px;">
+                </button>
                 <button class="btn btn-danger" (click)="deleteTransaction(t.id)" [disabled]="processing" style="padding: 6px 12px; font-size: 0.7rem; border-radius: 6px;">
                   🗑️
                 </button>
@@ -237,7 +245,8 @@ import { Organization } from '../../models/organization.model';
   `]
 })
 export class WalletManagementComponent implements OnInit {
-  private supabase = inject(SupabaseService);
+  supabase = inject(SupabaseService);
+  notify = inject(NotificationService);
 
   stats = {
     totalBalance: 0,
@@ -440,6 +449,21 @@ export class WalletManagementComponent implements OnInit {
       };
 
       await this.supabase.addTransaction(tx);
+
+      // Automated Engagement: Send WhatsApp Receipt for Deposits
+      if (this.transactionType === 'deposit' && this.selectedMember) {
+        const member = this.members.find(m => m.id === this.selectedMember);
+        if (member && member.contact_details && confirm('✅ Transaction stored. Send digital receipt via WhatsApp?')) {
+          this.notify.sendDonationReceipt(
+            member.name,
+            member.contact_details,
+            amount,
+            tx.category,
+            displayDescription
+          );
+        }
+      }
+
       this.closeForm();
       await this.loadData();
     } catch (e: any) {

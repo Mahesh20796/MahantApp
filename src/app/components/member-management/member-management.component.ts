@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { SupabaseService } from '../../services/supabase.service';
 import { AuthService } from '../../services/auth.service';
-import { FaceRecognitionService } from '../../services/face-recognition.service';
 import { Member } from '../../models/member.model';
 
 @Component({
@@ -234,12 +233,6 @@ import { Member } from '../../models/member.model';
           <div style="position: absolute; top: 30px; left: 0; width: 100%; text-align: center; color: white; z-index: 20;">
             <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.2em; opacity: 0.7; margin-bottom: 8px; font-weight: 800;">Profile Registration</div>
             <div style="font-size: 1.1rem; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">{{ scanStatus || 'Ready to Capture' }}</div>
-            
-            <!-- Alignment Quality Meter -->
-            <div *ngIf="alignmentQuality > 0" style="margin: 15px auto 0; width: 60%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
-              <div [style.width.%]="alignmentQuality" [style.background]="alignmentQuality > 80 ? '#10b981' : (alignmentQuality > 50 ? '#f59e0b' : '#ef4444')" style="height: 100%; transition: all 0.3s ease;"></div>
-            </div>
-            <div *ngIf="alignmentQuality > 0" style="font-size: 0.65rem; margin-top: 5px; opacity: 0.8; font-weight: 700;">ALIGNMENT QUALITY: {{ alignmentQuality }}%</div>
           </div>
           
           <!-- Capture Button -->
@@ -314,7 +307,6 @@ export class MemberManagementComponent implements OnInit {
   selectedMemberIds: Set<string> = new Set();
   supabaseService = inject(SupabaseService);
   auth = inject(AuthService);
-  faceService = inject(FaceRecognitionService);
   fb = inject(FormBuilder);
   
   @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
@@ -330,9 +322,7 @@ export class MemberManagementComponent implements OnInit {
   // Camera state
   isScanning = false;
   scanStatus = '';
-  alignmentQuality = 0;
   private stream: MediaStream | null = null;
-  private scanInterval: any;
 
   get isAdmin() {
     const role = this.auth.userRole?.trim() || '';
@@ -429,30 +419,8 @@ export class MemberManagementComponent implements OnInit {
       this.isLoading = true;
       const reader = new FileReader();
       reader.onload = async (e: any) => {
-        const base64 = e.target.result;
-        
-        try {
-          // Validate if the photo contains a face
-          await this.faceService.loadModels();
-          const descriptor = await this.faceService.createDescriptorFromBase64(base64);
-          
-          if (!descriptor) {
-            if (confirm('⚠️ Face Not Detected! Attendance recognition might not work with this photo. Do you want to use it anyway?')) {
-              this.memberForm.patchValue({ photo: base64 });
-            } else {
-              this.memberForm.patchValue({ photo: '' });
-            }
-          } else {
-            this.memberForm.patchValue({ photo: base64 });
-            console.log('✅ Face validated successfully');
-          }
-        } catch (err) {
-          console.error('Face validation error:', err);
-          // Fallback if AI fails to load or run
-          this.memberForm.patchValue({ photo: base64 });
-        } finally {
-          this.isLoading = false;
-        }
+        this.memberForm.patchValue({ photo: e.target.result });
+        this.isLoading = false;
       };
       reader.readAsDataURL(file);
     }
@@ -518,11 +486,21 @@ export class MemberManagementComponent implements OnInit {
       this.isLoading = true;
       try {
         const formValue = this.memberForm.value;
+        let photoUrl = formValue.photo;
+
+        // Optimized Storage Flow: If photo is base64, upload to storage bucket
+        if (photoUrl && photoUrl.includes('base64')) {
+          const uploadResult = await this.supabaseService.uploadMemberPhoto(photoUrl);
+          if (uploadResult.publicUrl) {
+            photoUrl = uploadResult.publicUrl;
+          }
+        }
+
         const dbPayload = {
           name: formValue.name,
           contact_details: formValue.contactDetails,
           email_id: formValue.emailId,
-          photo: formValue.photo,
+          photo: photoUrl,
           address: formValue.address,
           role: formValue.role,
           sabha_name: formValue.sabhaName,
@@ -632,16 +610,13 @@ export class MemberManagementComponent implements OnInit {
   async startCamera() {
     this.isScanning = true;
     this.scanStatus = 'Accessing Camera...';
-    this.alignmentQuality = 0;
     try {
-      await this.faceService.loadModels();
       this.stream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } 
       });
       if (this.videoElement) {
         this.videoElement.nativeElement.srcObject = this.stream;
-        this.scanStatus = 'Aligning Face...';
-        this.beginAutoCapture();
+        this.scanStatus = 'Ready to Capture';
       }
     } catch (err) {
       console.error('Camera error:', err);
@@ -652,55 +627,13 @@ export class MemberManagementComponent implements OnInit {
 
   stopCamera() {
     this.isScanning = false;
-    this.alignmentQuality = 0;
     if (this.stream) {
       this.stream.getTracks().forEach(track => track.stop());
       this.stream = null;
     }
-    if (this.scanInterval) {
-      clearTimeout(this.scanInterval);
-    }
   }
 
-  private async beginAutoCapture() {
-    let stableFrames = 0;
-    
-    const detect = async () => {
-      if (!this.isScanning || !this.videoElement) return;
-
-      const video = this.videoElement.nativeElement;
-      // Get face descriptor also returns detection info internally
-      const descriptor = await this.faceService.getFaceDescriptor(video);
-      
-      if (!this.isScanning) return;
-
-      if (descriptor) {
-        // Since we don't have the raw score here easily without changing the service,
-        // we'll assume if a descriptor is found with our strict 320 input size, it's decent.
-        // We simulate "quality" by presence.
-        this.alignmentQuality = 90;
-        stableFrames++;
-        
-        this.scanStatus = stableFrames >= 5 ? 'CAPTURING...' : 'HOLD STILL...';
-
-        if (stableFrames >= 10) {
-          this.alignmentQuality = 100;
-          await this.capturePhoto(true);
-          return;
-        }
-      } else {
-        this.alignmentQuality = Math.max(0, this.alignmentQuality - 10);
-        stableFrames = 0;
-        this.scanStatus = 'Align your face in frame';
-      }
-
-      this.scanInterval = setTimeout(detect, 100);
-    };
-
-    detect();
-  }
-
-  async capturePhoto(isAuto = false) {
+  async capturePhoto() {
     if (!this.videoElement || !this.isScanning) return;
     
     const video = this.videoElement.nativeElement;
@@ -710,35 +643,13 @@ export class MemberManagementComponent implements OnInit {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    // Draw flipped for the final photo if desired, but here we just take the frame
+    // Draw flipped for the final photo if desired
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     
     const base64 = canvas.toDataURL('image/jpeg', 0.85);
-    
-    try {
-      if (!isAuto) {
-        this.scanStatus = 'Validating...';
-        const descriptor = await this.faceService.getFaceDescriptor(video);
-        if (!descriptor) {
-          if (!confirm('⚠️ Face Not Detected! Use this photo anyway?')) return;
-        }
-      }
-      
-      this.memberForm.patchValue({ photo: base64 });
-      this.stopCamera();
-      
-      if (isAuto) {
-        // Visual feedback for auto capture
-        const audio = new Audio('https://www.soundjay.com/camera/camera-shutter-click-01.mp3');
-        audio.play().catch(() => {}); // Ignore if blocked
-      }
-      
-    } catch (err) {
-      console.error('Capture error:', err);
-      this.memberForm.patchValue({ photo: base64 });
-      this.stopCamera();
-    }
+    this.memberForm.patchValue({ photo: base64 });
+    this.stopCamera();
   }
 }

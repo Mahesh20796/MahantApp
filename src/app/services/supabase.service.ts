@@ -257,7 +257,7 @@ export class SupabaseService {
       .from('wallet_transactions')
       .select(`
         *,
-        members (name),
+        members (name, contact_details),
         organizations (name)
       `)
       .order('created_at', { ascending: false });
@@ -641,5 +641,45 @@ export class SupabaseService {
     }).filter(d => d.count > 0 || d.amount > 0);
 
     return distribution;
+  }
+  // ------------------------------------
+  // STORAGE METHODS
+  // ------------------------------------
+  async uploadMemberPhoto(base64Data: string): Promise<{ publicUrl: string | null; error: any }> {
+    if (this.isMockMode) return { publicUrl: base64Data, error: null };
+
+    if (!base64Data || !base64Data.includes('base64')) {
+      return { publicUrl: base64Data, error: null }; // Already a URL or invalid
+    }
+
+    try {
+      // 1. Convert base64 to Blob
+      const base64Content = base64Data.split(',')[1];
+      const byteCharacters = atob(base64Content);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'image/jpeg' });
+
+      // 2. Upload to Supabase Storage
+      const fileName = `profile_${Math.random().toString(36).substring(7)}_${Date.now()}.jpg`;
+      const { data, error } = await this.supabase.storage
+        .from('member-photos')
+        .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
+
+      if (error) throw error;
+
+      // 3. Get Public URL
+      const { data: { publicUrl } } = this.supabase.storage
+        .from('member-photos')
+        .getPublicUrl(fileName);
+
+      return { publicUrl, error: null };
+    } catch (e: any) {
+      console.error('Storage Upload Error:', e);
+      return { publicUrl: null, error: e };
+    }
   }
 }

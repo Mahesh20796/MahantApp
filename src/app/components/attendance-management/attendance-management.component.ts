@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../services/supabase.service';
 import { AuthService } from '../../services/auth.service';
-import { FaceRecognitionService } from '../../services/face-recognition.service';
+import { NotificationService } from '../../services/notification.service';
 
 interface AttendanceRecord {
   memberId: string;
   memberName: string;
+  phone?: string;
   role: string;
   memberStatus: string;
   photo?: string;
@@ -80,11 +81,6 @@ interface AttendanceRecord {
                         <img *ngIf="record.photo" [src]="record.photo" style="width: 100%; height: 100%; object-fit: cover;">
                         <span *ngIf="!record.photo">{{ record.memberName ? record.memberName.charAt(0) : '?' }}</span>
                      </div>
-                     <button *ngIf="record.photo && !record.status" class="face-mark-btn" 
-                             style="width: 24px; height: 24px; font-size: 0.7rem; top: -5px; right: -5px;"
-                             (click)="startScanner(record)" title="Mark with Face Recognition">
-                       📸
-                     </button>
                    </div>
                    <div>
                       <div style="font-weight: 700; color: var(--text-dark); font-size: 0.95rem;">{{ record.memberName }}</div>
@@ -99,6 +95,15 @@ interface AttendanceRecord {
                       [style.border]="record.status === 'P' ? '1px solid rgba(16, 185, 129, 0.2)' : (record.status === 'A' ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(245, 158, 11, 0.2)')">
                   {{ record.status === 'P' ? 'Present ✅' : record.status === 'A' ? 'Absent ❌' : 'Leave 🏠' }}
                 </span>
+                
+                <!-- WhatsApp Engagement Trigger -->
+                <button *ngIf="record.status && record.phone" 
+                        (click)="notify.sendAttendanceConfirmation(record.memberName, record.phone, record.status, 'Sabha')"
+                        title="Send WhatsApp Confirmation"
+                        style="background: transparent; border: none; padding: 4px; cursor: pointer; opacity: 0.5; transition: opacity 0.2s;"
+                        onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" style="width: 18px; height: 18px;">
+                </button>
                 <span *ngIf="!record.status" style="color: var(--text-muted); background: var(--bg-sidebar-hover); padding: 8px 14px; border-radius: 10px; font-size: 0.75rem; font-weight: 800; border: 1px solid var(--border-color); letter-spacing: 0.05em;">UNMARKED</span>
               </td>
               <td style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">
@@ -148,9 +153,6 @@ interface AttendanceRecord {
                     <img *ngIf="record.photo" [src]="record.photo" style="width: 100%; height: 100%; object-fit: cover;">
                     <span *ngIf="!record.photo">{{ record.memberName ? record.memberName.charAt(0) : '?' }}</span>
                   </div>
-                  <button *ngIf="record.photo && !record.status" class="face-mark-btn" (click)="startScanner(record)" title="Mark with Face Recognition">
-                    📸
-                  </button>
                 </div>
                 <div>
                   <div style="font-weight: 800; color: var(--text-dark); font-size: 1.05rem; letter-spacing: -0.01em;">{{ record.memberName }}</div>
@@ -230,50 +232,6 @@ interface AttendanceRecord {
         <span style="font-size: 0.55rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em;">SAVE</span>
       </button>
 
-      <!-- Camera Overlay for Face Recognition -->
-      <div *ngIf="isScanning" class="camera-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(15px);">
-        <div class="camera-container" [class.match-found]="scanStatus.includes('MATCH')" style="position: relative; width: 85%; max-width: 380px; aspect-ratio: 3/4; border-radius: 40px; overflow: hidden; border: 2px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
-          <video #videoElement autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"></video>
-          
-          <!-- Modern Face Guide -->
-          <div class="face-guide">
-            <div class="corner top-left"></div>
-            <div class="corner top-right"></div>
-            <div class="corner bottom-left"></div>
-            <div class="corner bottom-right"></div>
-          </div>
-
-          <!-- Scanning Animation -->
-          <div class="scan-beam" *ngIf="!scanStatus.includes('MATCH')"></div>
-          
-          <!-- Status Overlay -->
-          <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.6) 100%); pointer-events: none;"></div>
-
-          <div style="position: absolute; top: 30px; left: 0; width: 100%; text-align: center; color: white; z-index: 20;">
-            <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.2em; opacity: 0.7; margin-bottom: 8px; font-weight: 800;">AI Biometric Scanner</div>
-            <div style="font-size: 1.1rem; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">{{ scanStatus }}</div>
-            
-            <!-- Match Strength Meter -->
-            <div *ngIf="matchStrength > 0" style="margin: 15px auto 0; width: 60%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
-              <div [style.width.%]="matchStrength" [style.background]="matchStrength > 80 ? '#10b981' : (matchStrength > 50 ? '#f59e0b' : '#ef4444')" style="height: 100%; transition: all 0.3s ease;"></div>
-            </div>
-            <div *ngIf="matchStrength > 0" style="font-size: 0.65rem; margin-top: 5px; opacity: 0.8; font-weight: 700;">MATCH CONFIDENCE: {{ matchStrength }}%</div>
-          </div>
-
-          <div *ngIf="scanningMember" style="position: absolute; bottom: 30px; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; z-index: 20;">
-            <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 12px 24px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 12px;">
-               <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; color: white; border: 2px solid rgba(255,255,255,0.2);">
-                 {{ scanningMember.memberName.charAt(0) }}
-               </div>
-               <div style="color: white; font-size: 0.95rem; font-weight: 700; letter-spacing: -0.01em;">{{ scanningMember.memberName }}</div>
-            </div>
-          </div>
-        </div>
-
-        <button class="btn" (click)="stopScanner()" style="margin-top: 40px; background: rgba(255,255,255,0.05); color: white; border-radius: 50px; padding: 14px 40px; font-weight: 800; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); transition: all 0.2s;">
-          <span style="opacity: 0.7;">✕</span> &nbsp; ABORT SCAN
-        </button>
-      </div>
     </div>
   `,
   styles: [`
@@ -293,91 +251,12 @@ interface AttendanceRecord {
       box-shadow: 0 12px 32px rgba(248, 113, 113, 0.4);
       z-index: 100;
     }
-    .camera-overlay {
-      animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .camera-container {
-      transition: all 0.5s ease;
-    }
-    .camera-container.match-found {
-      border-color: #10b981;
-      box-shadow: 0 0 100px rgba(16, 185, 129, 0.4);
-      transform: scale(1.02);
-    }
-    .face-guide {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 70%;
-      height: 60%;
-      pointer-events: none;
-      z-index: 10;
-    }
-    .corner {
-      position: absolute;
-      width: 30px;
-      height: 30px;
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      transition: all 0.3s ease;
-    }
-    .match-found .corner {
-      border-color: #10b981;
-      width: 40px;
-      height: 40px;
-    }
-    .top-left { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 12px 0 0 0; }
-    .top-right { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 12px 0 0; }
-    .bottom-left { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 12px; }
-    .bottom-right { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 12px 0; }
-    
-    .scan-beam {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100px;
-      background: linear-gradient(to bottom, rgba(248, 113, 113, 0.2), transparent);
-      border-top: 2px solid var(--primary);
-      box-shadow: 0 -10px 20px rgba(248, 113, 113, 0.3);
-      animation: scan-beam 2.5s ease-in-out infinite;
-      z-index: 5;
-    }
-    @keyframes scan-beam {
-      0% { transform: translateY(-100px); }
-      50% { transform: translateY(500px); }
-      100% { transform: translateY(-100px); }
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; backdrop-filter: blur(0px); }
-      to { opacity: 1; backdrop-filter: blur(15px); }
-    }
-    .face-mark-btn {
-      position: absolute;
-      top: -10px;
-      right: -10px;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--primary);
-      color: white;
-      border: 2px solid white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-      cursor: pointer;
-      box-shadow: var(--shadow-sm);
-      z-index: 5;
-    }
   `]
 })
 export class AttendanceManagementComponent implements OnInit {
   supabaseService = inject(SupabaseService);
   auth = inject(AuthService);
-  faceService = inject(FaceRecognitionService);
-  
-  @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
+  notify = inject(NotificationService);
   
   sabhas: any[] = [];
   selectedSabhaId: string = '';
@@ -386,14 +265,6 @@ export class AttendanceManagementComponent implements OnInit {
   attendanceList: AttendanceRecord[] = [];
   isLoading = false;
   maxDate: string = '';
-
-  // Face recognition state
-  isScanning = false;
-  scanStatus = 'Initializing camera...';
-  matchStrength = 0;
-  scanningMember: AttendanceRecord | null = null;
-  private stream: MediaStream | null = null;
-  private scanInterval: any;
 
   constructor() {
     const now = new Date();
@@ -488,9 +359,10 @@ export class AttendanceManagementComponent implements OnInit {
         })
         .map((m: any) => {
           const att = existingAttendance?.find(a => a.member_id === m.id);
-          return {
+           return {
             memberId: m.id,
             memberName: m.name,
+            phone: m.contact_details,
             role: m.role,
             memberStatus: m.status,
             photo: m.photo,
@@ -578,112 +450,4 @@ export class AttendanceManagementComponent implements OnInit {
       this.isLoading = false;
     }
   }
-
-  // Face Recognition Methods
-  async startScanner(record: AttendanceRecord) {
-    if (!record.photo) {
-      alert('This member does not have a profile photo for face recognition.');
-      return;
-    }
-
-    this.scanningMember = record;
-    this.isScanning = true;
-    this.scanStatus = 'Loading AI Models...';
-
-    try {
-      await this.faceService.loadModels();
-      this.scanStatus = 'Opening Camera...';
-
-      this.stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } 
-      });
-
-      if (this.videoElement) {
-        this.videoElement.nativeElement.srcObject = this.stream;
-        this.scanStatus = 'Scanning Face...';
-        this.beginDetection();
-      }
-    } catch (err) {
-      console.error('Camera error:', err);
-      this.scanStatus = 'Error accessing camera';
-      alert('Could not access camera. Please ensure you have given permission.');
-      this.stopScanner();
-    }
-  }
-
-  stopScanner() {
-    this.isScanning = false;
-    this.scanningMember = null;
-    if (this.stream) {
-      this.stream.getTracks().forEach(track => track.stop());
-    }
-    if (this.scanInterval) {
-      clearTimeout(this.scanInterval);
-    }
-  }
-
-  private async beginDetection() {
-    if (!this.scanningMember || !this.scanningMember.photo) return;
-
-    this.scanStatus = 'Processing Profile...';
-    const profileDescriptor = await this.faceService.createDescriptorFromBase64(this.scanningMember.photo);
-    
-    if (!profileDescriptor) {
-      this.scanStatus = 'Invalid Profile Photo';
-      setTimeout(() => this.stopScanner(), 2000);
-      return;
-    }
-
-    this.scanStatus = 'Aligning Face...';
-    let attempts = 0;
-    const maxAttempts = 30; // ~15 seconds at 500ms intervals
-
-    const detect = async () => {
-      if (!this.isScanning || !this.videoElement) return;
-
-      const capturedDescriptor = await this.faceService.getFaceDescriptor(this.videoElement.nativeElement);
-      
-      if (!this.isScanning) return; // Check again after await
-
-      attempts++;
-      
-      if (!capturedDescriptor) {
-        this.scanStatus = 'Face Not Detected ⚠️ (Keep face in frame)';
-        this.matchStrength = 0;
-      } else {
-        const distance = this.faceService.computeDistance(capturedDescriptor, profileDescriptor);
-        const isMatch = distance < 0.65; // Slightly more lenient threshold (0.65 vs 0.6)
-        
-        // Calculate a human-readable match strength percentage
-        // 0.2 distance or less = 100%, 0.7 or more = 0%
-        this.matchStrength = Math.max(0, Math.min(100, Math.round((0.7 - distance) / 0.5 * 100)));
-        
-        console.log(`👤 AI matching distance: ${distance.toFixed(4)} (Strength: ${this.matchStrength}%)`);
-        
-        if (isMatch) {
-          this.matchStrength = 100;
-          this.scanStatus = 'MATCH FOUND! ✅';
-          if (this.scanningMember) {
-            await this.mark(this.scanningMember, 'P');
-          }
-          setTimeout(() => this.stopScanner(), 1500);
-          return;
-        } else {
-          this.scanStatus = `Analyzing Face... (${Math.round((attempts/maxAttempts)*100)}%)`;
-        }
-      }
-
-      if (attempts > maxAttempts) {
-        this.scanStatus = 'Timeout: Face Not Recognized';
-        setTimeout(() => this.stopScanner(), 2000);
-        return;
-      }
-
-      // Schedule next detection after this one finishes
-      this.scanInterval = setTimeout(detect, 100);
-    };
-
-    detect();
-  }
 }
-
