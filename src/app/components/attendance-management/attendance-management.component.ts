@@ -583,7 +583,7 @@ export class AttendanceManagementComponent implements OnInit {
         attempts++;
       } else {
         attempts++;
-        const distance = faceapi.euclideanDistance(capturedDescriptor, profileDescriptor);
+        const distance = this.faceService.computeDistance(capturedDescriptor, profileDescriptor);
         const isMatch = distance < 0.6;
         
         if (isMatch) {

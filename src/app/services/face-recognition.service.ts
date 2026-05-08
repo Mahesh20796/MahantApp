@@ -46,9 +46,13 @@ export class FaceRecognitionService {
     const capturedDescriptor = await this.getFaceDescriptor(capturedImage);
     if (!capturedDescriptor) return false;
 
-    const distance = faceapi.euclideanDistance(capturedDescriptor, profileImageDescriptor);
+    const distance = this.computeDistance(capturedDescriptor, profileImageDescriptor);
     // Standard threshold for face-api is around 0.6. Lower means stricter.
     return distance < 0.6;
+  }
+
+  computeDistance(descriptor1: Float32Array, descriptor2: Float32Array): number {
+    return faceapi.euclideanDistance(descriptor1, descriptor2);
   }
 
   async createDescriptorFromBase64(base64String: string): Promise<Float32Array | null> {
