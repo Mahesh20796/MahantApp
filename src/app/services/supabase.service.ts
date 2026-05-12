@@ -480,22 +480,37 @@ export class SupabaseService {
         // Calculate duration based on Sabha Start and End time
         const startTimeStr = curr.sabhas?.time_schedule;
         const endTimeStr = curr.sabhas?.end_time;
+        const checkInTime = curr.time_marked ? new Date(curr.time_marked) : null;
 
         if (startTimeStr && endTimeStr) {
           try {
-            const [startH, startM] = startTimeStr.split(':').map(Number);
-            const [endH, endM] = endTimeStr.split(':').map(Number);
-            
-            let durationHours = (endH + endM/60) - (startH + startM/60);
-            
-            // Handle cross-midnight sabhas if any
-            if (durationHours < 0) durationHours += 24;
-            
-            if (durationHours > 0) {
-              acc[mid].totalHours += durationHours;
+            // Helper to get minutes from HH:mm
+            const getMinutes = (str: string) => {
+               const [h, m] = str.split(':').map(Number);
+               return (h * 60) + m;
+            };
+
+            const sabhaStartMins = getMinutes(startTimeStr);
+            const sabhaEndMins = getMinutes(endTimeStr);
+            let totalSabhaMinutes = sabhaEndMins - sabhaStartMins;
+            if (totalSabhaMinutes < 0) totalSabhaMinutes += 1440; // Midnight rollover
+
+            // Calculate member duration: End Time - Check-in Time
+            let memberAttendanceMinutes = 0;
+            if (checkInTime) {
+               const checkInMins = (checkInTime.getHours() * 60) + checkInTime.getMinutes();
+               memberAttendanceMinutes = sabhaEndMins - checkInMins;
+               if (memberAttendanceMinutes < 0) memberAttendanceMinutes += 1440;
+               
+               // Cap member duration to total sabha duration (cannot attend more than full sabha)
+               // and ensure it's not negative (checked in after sabha ended)
+               memberAttendanceMinutes = Math.max(0, Math.min(memberAttendanceMinutes, totalSabhaMinutes));
             } else {
-              acc[mid].totalHours += 1.5; // Fallback
+               // If check-in time missing, assume full attendance
+               memberAttendanceMinutes = totalSabhaMinutes;
             }
+            
+            acc[mid].totalHours += (memberAttendanceMinutes / 60);
           } catch (e) {
             acc[mid].totalHours += 1.5; // Fallback on parse error
           }
