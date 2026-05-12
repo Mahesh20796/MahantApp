@@ -450,7 +450,7 @@ export class SupabaseService {
 
   async getTopEarlyBirds(limit: number = 3, startDate?: string, endDate?: string) {
     if (this.isMockMode) {
-      return this.mockMembers.slice(0, limit).map((m, i) => ({ ...m, name: m.name, count: 12 - i }));
+      return this.mockMembers.slice(0, limit).map((m, i) => ({ ...m, name: m.name, count: 12 - i, totalHours: (12 - i) * 1.5 }));
     }
 
     let query = this.supabase
@@ -458,8 +458,8 @@ export class SupabaseService {
       .select(`
         status,
         time_marked,
-        members(id, name),
-        sabhas(time_schedule)
+        check_out_time,
+        members(id, name)
       `)
       .eq('status', 'P');
 
@@ -472,13 +472,32 @@ export class SupabaseService {
     const results = (data || []).reduce((acc: any, curr: any) => {
         const mid = curr.members?.id;
         if (!mid) return acc;
-        if (!acc[mid]) acc[mid] = { name: curr.members.name, count: 0 };
+        
+        if (!acc[mid]) acc[mid] = { name: curr.members.name, count: 0, totalHours: 0 };
+        
         acc[mid].count++;
+        
+        // Calculate duration if both check-in and check-out exist
+        if (curr.time_marked && curr.check_out_time) {
+          const start = new Date(curr.time_marked);
+          const end = new Date(curr.check_out_time);
+          const diffMs = end.getTime() - start.getTime();
+          if (diffMs > 0) {
+            acc[mid].totalHours += (diffMs / (1000 * 60 * 60)); // Convert to hours
+          } else {
+            // Fallback for same-time marks or errors
+            acc[mid].totalHours += 1.5;
+          }
+        } else {
+          // Default to 1.5 hours per session if check-out is missing
+          acc[mid].totalHours += 1.5;
+        }
+        
         return acc;
     }, {});
 
     return Object.values(results)
-      .sort((a: any, b: any) => b.count - a.count)
+      .sort((a: any, b: any) => b.totalHours - a.totalHours)
       .slice(0, limit);
   }
 

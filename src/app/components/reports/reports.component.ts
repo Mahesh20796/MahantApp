@@ -141,7 +141,7 @@ import { Organization } from '../../models/organization.model';
                    <div class="bird-name-modern">{{ bird.name }}</div>
                    <div class="bird-stats-modern">
                       <span>✅ {{ bird.count }} Presents</span>
-                      <span class="hours-highlight">⏱️ {{ (bird.count * 1.5).toFixed(1) }} Hours</span>
+                      <span class="hours-highlight">⏱️ {{ (bird.totalHours || 0).toFixed(1) }} Hours</span>
                    </div>
                 </div>
                 <div class="medal-modern" *ngIf="i === 0">🥇</div>
