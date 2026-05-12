@@ -125,6 +125,41 @@ Chart.register(...registerables);
          </div>
       </div>
 
+      <!-- BIRTHDAY NOTIFICATIONS -->
+      <!-- BIRTHDAY NOTIFICATIONS -->
+      <div class="bento-item col-12 birthday-card">
+         <div class="hub-header" style="margin-bottom: 16px;">
+            <h2 class="hub-title" style="display: flex; align-items: center; gap: 10px;">🎂 Birthday Notifications</h2>
+            <p class="hub-sub">Celebrating our community members this week & next week</p>
+         </div>
+         
+         <div *ngIf="upcomingBirthdays.length > 0" class="birthday-list">
+            <div *ngFor="let b of upcomingBirthdays" class="birthday-item" [class.today]="b.isBirthdayToday">
+               <div class="birthday-avatar">
+                  <img *ngIf="b.photo" [src]="b.photo" style="width: 100%; height: 100%; object-fit: cover;">
+                  <span *ngIf="!b.photo">{{ b.name.charAt(0) }}</span>
+                  <div *ngIf="b.isBirthdayToday" class="today-badge">Today</div>
+               </div>
+               <div class="birthday-info">
+                  <div class="birthday-name">{{ b.name }}</div>
+                  <div class="birthday-date">📅 {{ b.dob | date:'dd MMMM' }}</div>
+               </div>
+               <div class="birthday-action">
+                  <span class="sabha-tag">{{ b.sabha_name }}</span>
+               </div>
+            </div>
+         </div>
+
+         <!-- Empty State -->
+         <div *ngIf="upcomingBirthdays.length === 0" class="birthday-empty">
+            <div class="empty-icon">✨</div>
+            <div class="empty-text">
+               <h4>No upcoming birthdays</h4>
+               <p>All caught up! No members have birthdays in the next 14 days.</p>
+            </div>
+         </div>
+      </div>
+
       <!-- OPERATIONS HUB -->
       <div class="bento-item col-12 operations-hub">
          <div class="hub-header">
@@ -308,6 +343,113 @@ Chart.register(...registerables);
     @media (max-width: 480px) {
        .module-grid-modern { grid-template-columns: repeat(2, 1fr); }
     }
+
+    .birthday-card {
+       background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+       border: 1px solid #fee2e2;
+       padding: 32px;
+    }
+    .dark-theme .birthday-card {
+       background: linear-gradient(135deg, #1e293b 0%, #450a0a 100%);
+       border-color: #7f1d1d;
+    }
+    .birthday-list {
+       display: flex;
+       gap: 16px;
+       overflow-x: auto;
+       padding-bottom: 8px;
+    }
+    .birthday-item {
+       flex: 0 0 280px;
+       background: var(--bg-card);
+       border: 1px solid var(--border-color);
+       padding: 16px;
+       border-radius: 20px;
+       display: flex;
+       align-items: center;
+       gap: 16px;
+       transition: all 0.3s;
+    }
+    .birthday-item.today {
+       border-color: #ef4444;
+       box-shadow: 0 4px 15px rgba(239, 68, 68, 0.15);
+       background: #fffafa;
+    }
+    .dark-theme .birthday-item.today {
+       background: #450a0a;
+    }
+    .birthday-avatar {
+       width: 54px;
+       height: 54px;
+       border-radius: 14px;
+       background: var(--primary-soft);
+       color: var(--primary);
+       display: flex;
+       align-items: center;
+       justify-content: center;
+       font-weight: 800;
+       font-size: 1.2rem;
+       position: relative;
+       overflow: hidden;
+       border: 1px solid var(--border-color);
+    }
+    .today-badge {
+       position: absolute;
+       bottom: 0;
+       width: 100%;
+       background: #ef4444;
+       color: white;
+       font-size: 0.5rem;
+       font-weight: 900;
+       text-align: center;
+       padding: 2px 0;
+       text-transform: uppercase;
+    }
+    .birthday-name {
+       font-weight: 800;
+       font-size: 1rem;
+       color: var(--text-dark);
+    }
+    .birthday-date {
+       font-size: 0.8rem;
+       color: var(--text-muted);
+       font-weight: 700;
+    }
+    .sabha-tag {
+       font-size: 0.65rem;
+       font-weight: 800;
+       color: var(--primary);
+       background: var(--primary-soft);
+       padding: 4px 10px;
+       border-radius: 99px;
+       white-space: nowrap;
+    }
+    .birthday-empty {
+       display: flex;
+       align-items: center;
+       gap: 20px;
+       padding: 20px;
+       background: rgba(255, 255, 255, 0.5);
+       border-radius: 20px;
+       border: 1px dashed var(--border-color);
+    }
+    .dark-theme .birthday-empty {
+       background: rgba(0, 0, 0, 0.2);
+    }
+    .empty-icon {
+       font-size: 2rem;
+    }
+    .empty-text h4 {
+       margin: 0;
+       font-weight: 800;
+       color: var(--text-dark);
+    }
+    .empty-text p {
+       margin: 4px 0 0 0;
+       font-size: 0.85rem;
+       color: var(--text-muted);
+       font-weight: 600;
+    }
   `]
 })
 export class DashboardComponent implements OnInit, AfterViewInit {
@@ -328,6 +470,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   private actChart: any;
 
   activityData: any[] = [];
+  upcomingBirthdays: any[] = [];
 
   async ngOnInit() {
     await this.loadStats();
@@ -340,16 +483,18 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   async loadStats() {
     this.isLoading = true;
     try {
-      const [stats, lastSabha, attTrends, actDist] = await Promise.all([
+      const [stats, lastSabha, attTrends, actDist, birthdays] = await Promise.all([
         this.supabase.getOrganizationStats(),
         this.supabase.getLastSabhaStats(),
         this.supabase.getWeeklyAttendanceTrends(),
-        this.supabase.getActivityDistribution()
+        this.supabase.getActivityDistribution(),
+        this.supabase.getUpcomingBirthdays(14)
       ]);
       
       this.report = stats;
       this.lastSabha = lastSabha;
       this.activityData = actDist;
+      this.upcomingBirthdays = birthdays;
       
       this.renderCharts(attTrends, lastSabha, actDist);
     } catch (e) {

@@ -8,6 +8,7 @@ export interface Member {
   role: string;
   sabhaName?: string;
   joiningDate: Date;
+  dob?: string;
   status: 'Active' | 'Inactive';
   walletBalance: number;
   password?: string;

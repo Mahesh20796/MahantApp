@@ -16,8 +16,8 @@ export class SupabaseService {
   public isMockMode = false; // Primary mode is live database
 
   private mockMembers = [
-    { id: '1', name: 'Bhavin Patel', contact_details: '9876543210', role: 'Admin', status: 'Active', address: 'BAPS Mandir, Bharuch', sabha_name: 'Yuva Sabha' },
-    { id: '2', name: 'Smit Patel', contact_details: '9123456780', role: 'Volunteer', status: 'Active', address: 'BAPS Mandir, Bharuch', sabha_name: 'Yuva Sabha' }
+    { id: '1', name: 'Bhavin Patel', contact_details: '9876543210', role: 'Admin', status: 'Active', address: 'BAPS Mandir, Bharuch', sabha_name: 'Yuva Sabha', dob: '1995-05-12' },
+    { id: '2', name: 'Smit Patel', contact_details: '9123456780', role: 'Volunteer', status: 'Active', address: 'BAPS Mandir, Bharuch', sabha_name: 'Yuva Sabha', dob: '1998-05-19' }
   ];
 
   private mockSabhas = [
@@ -681,5 +681,55 @@ export class SupabaseService {
       console.error('Storage Upload Error:', e);
       return { publicUrl: null, error: e };
     }
+  }
+
+  async getUpcomingBirthdays(days: number = 14) {
+    if (this.isMockMode) {
+      return this.mockMembers.filter(m => m.dob).map(m => ({
+        ...m,
+        isBirthdayToday: new Date(m.dob!).getDate() === new Date().getDate() && new Date(m.dob!).getMonth() === new Date().getMonth()
+      })).slice(0, 3);
+    }
+
+    const { data, error } = await this.supabase
+      .from('members')
+      .select('id, name, dob, photo, role, sabha_name')
+      .not('dob', 'is', null);
+
+    if (error) throw error;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const results = data.filter(m => {
+      // Split YYYY-MM-DD manually to avoid timezone shifts
+      const parts = m.dob.split('-');
+      if (parts.length !== 3) return false;
+      
+      const dobMonth = parseInt(parts[1], 10) - 1; // 0-indexed
+      const dobDay = parseInt(parts[2], 10);
+      
+      const birthdayThisYear = new Date(today.getFullYear(), dobMonth, dobDay);
+      const birthdayNextYear = new Date(today.getFullYear() + 1, dobMonth, dobDay);
+      
+      const diffThisYear = (birthdayThisYear.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+      const diffNextYear = (birthdayNextYear.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+      
+      return (diffThisYear >= 0 && diffThisYear <= days) || (diffNextYear >= 0 && diffNextYear <= days);
+    }).map(m => {
+      const parts = m.dob.split('-');
+      const dobMonth = parseInt(parts[1], 10) - 1;
+      const dobDay = parseInt(parts[2], 10);
+      
+      const isToday = dobDay === today.getDate() && dobMonth === today.getMonth();
+      return { ...m, isBirthdayToday: isToday };
+    });
+
+    return results.sort((a, b) => {
+      const dateA = new Date(a.dob);
+      const dateB = new Date(b.dob);
+      if (dateA.getMonth() !== dateB.getMonth()) return dateA.getMonth() - dateB.getMonth();
+      return dateA.getDate() - dateB.getDate();
+    });
   }
 }

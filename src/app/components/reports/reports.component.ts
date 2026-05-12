@@ -701,7 +701,8 @@ export class ReportsComponent implements OnInit {
     { key: 'password', label: 'Login Password', selected: false },
     { key: 'sabha_name', label: 'Branch/Sabha', selected: false },
     { key: 'address', label: 'Residential Address', selected: false },
-    { key: 'status', label: 'Account Status', selected: false }
+    { key: 'status', label: 'Account Status', selected: false },
+    { key: 'dob', label: 'Date of Birth', selected: false }
   ];
 
   financialRange = {
@@ -1077,7 +1078,7 @@ export class ReportsComponent implements OnInit {
      const headers = selectedFields.map(f => f.label);
      const body = this.members.filter(m => m.role !== 'Organization/Activity').map(m => {
         return selectedFields.map(f => {
-           if (f.key === 'joining_date') {
+           if (f.key === 'joining_date' || f.key === 'dob') {
              return m[f.key] ? this.formatDateDMY(m[f.key]) : 'N/A';
            }
            if (f.key === 'balance') {
@@ -1119,7 +1120,7 @@ export class ReportsComponent implements OnInit {
      const data = this.members.filter(m => m.role !== 'Organization/Activity').map(m => {
         const row: any = {};
         selectedFields.forEach(f => {
-           if (f.key === 'joining_date') {
+           if (f.key === 'joining_date' || f.key === 'dob') {
              row[f.label] = m[f.key] ? this.formatDateDMY(m[f.key]) : 'N/A';
            } else if (f.key === 'balance') {
              row[f.label] = m[f.key] || 0;

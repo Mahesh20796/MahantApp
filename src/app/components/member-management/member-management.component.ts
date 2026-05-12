@@ -51,6 +51,11 @@ import { Member } from '../../models/member.model';
                 <input type="text" class="form-control" formControlName="contactDetails" placeholder="7-15 Digits">
                 <div *ngIf="memberForm.get('contactDetails')?.touched && memberForm.get('contactDetails')?.invalid" style="color: #ef4444; font-size: 0.7rem; margin-top: 4px;">Valid 7-15 digit number required</div>
               </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label">Date of Birth *</label>
+                <input type="date" class="form-control" formControlName="dob">
+                <div *ngIf="memberForm.get('dob')?.touched && memberForm.get('dob')?.invalid" style="color: #ef4444; font-size: 0.7rem; margin-top: 4px;">DOB is required</div>
+              </div>
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 20px;">
@@ -352,6 +357,7 @@ export class MemberManagementComponent implements OnInit {
     name: ['', Validators.required],
     contactDetails: ['', [Validators.required, Validators.pattern('^[0-9]{7,15}$')]],
     emailId: ['', [Validators.required, Validators.email]],
+    dob: ['', Validators.required],
     photo: ['', Validators.required],
     address: ['', Validators.required],
     password: ['', [Validators.required, Validators.minLength(6)]],
@@ -389,6 +395,7 @@ export class MemberManagementComponent implements OnInit {
         role: item.role,
         sabhaName: item.sabha_name,
         joiningDate: item.joining_date,
+        dob: item.dob,
         status: item.status,
         walletBalance: item.wallet_balance,
         password: item.password
@@ -438,7 +445,8 @@ export class MemberManagementComponent implements OnInit {
       role: m.role,
       sabhaName: m.sabhaName,
       status: m.status,
-      password: m.password
+      password: m.password,
+      dob: m.dob
     });
   }
 
@@ -505,7 +513,8 @@ export class MemberManagementComponent implements OnInit {
           role: formValue.role,
           sabha_name: formValue.sabhaName,
           status: formValue.status,
-          password: formValue.password
+          password: formValue.password,
+          dob: formValue.dob
         };
 
         let result;
