@@ -473,7 +473,7 @@ export class SupabaseService {
         const mid = curr.members?.id;
         if (!mid) return acc;
         
-        if (!acc[mid]) acc[mid] = { name: curr.members.name, count: 0, totalHours: 0 };
+        if (!acc[mid]) acc[mid] = { name: curr.members.name, count: 0, totalHours: 0, totalPossibleMinutes: 0 };
         
         acc[mid].count++;
         
@@ -484,7 +484,6 @@ export class SupabaseService {
 
         if (startTimeStr && endTimeStr) {
           try {
-            // Helper to get minutes from HH:mm
             const getMinutes = (str: string) => {
                const [h, m] = str.split(':').map(Number);
                return (h * 60) + m;
@@ -493,36 +492,37 @@ export class SupabaseService {
             const sabhaStartMins = getMinutes(startTimeStr);
             const sabhaEndMins = getMinutes(endTimeStr);
             let totalSabhaMinutes = sabhaEndMins - sabhaStartMins;
-            if (totalSabhaMinutes < 0) totalSabhaMinutes += 1440; // Midnight rollover
+            if (totalSabhaMinutes < 0) totalSabhaMinutes += 1440;
 
-            // Calculate member duration: End Time - Check-in Time
             let memberAttendanceMinutes = 0;
             if (checkInTime) {
                const checkInMins = (checkInTime.getHours() * 60) + checkInTime.getMinutes();
                memberAttendanceMinutes = sabhaEndMins - checkInMins;
                if (memberAttendanceMinutes < 0) memberAttendanceMinutes += 1440;
-               
-               // Cap member duration to total sabha duration (cannot attend more than full sabha)
-               // and ensure it's not negative (checked in after sabha ended)
                memberAttendanceMinutes = Math.max(0, Math.min(memberAttendanceMinutes, totalSabhaMinutes));
             } else {
-               // If check-in time missing, assume full attendance
                memberAttendanceMinutes = totalSabhaMinutes;
             }
             
             acc[mid].totalHours += (memberAttendanceMinutes / 60);
+            acc[mid].totalPossibleMinutes += totalSabhaMinutes;
           } catch (e) {
-            acc[mid].totalHours += 1.5; // Fallback on parse error
+            acc[mid].totalHours += 1.5;
+            acc[mid].totalPossibleMinutes += 90;
           }
         } else {
-          // Default to 1.5 hours per session if sabha times are missing
           acc[mid].totalHours += 1.5;
+          acc[mid].totalPossibleMinutes += 90;
         }
         
         return acc;
     }, {});
 
     return Object.values(results)
+      .map((item: any) => ({
+        ...item,
+        percentage: (item.totalHours * 60 / item.totalPossibleMinutes) * 100
+      }))
       .sort((a: any, b: any) => b.totalHours - a.totalHours)
       .slice(0, limit);
   }

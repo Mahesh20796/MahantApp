@@ -141,7 +141,8 @@ import { Organization } from '../../models/organization.model';
                    <div class="bird-name-modern">{{ bird.name }}</div>
                    <div class="bird-stats-modern">
                       <span>✅ {{ bird.count }} Presents</span>
-                      <span class="hours-highlight">⏱️ {{ (bird.totalHours || 0).toFixed(1) }} Hours</span>
+                      <span class="hours-highlight">⏱️ {{ (bird.totalHours || 0).toFixed(1) }}h</span>
+                      <span class="percentage-badge" [style.background]="getPercentageColor(bird.percentage)">{{ (bird.percentage || 0).toFixed(1) }}%</span>
                    </div>
                 </div>
                 <div class="medal-modern" *ngIf="i === 0">🥇</div>
@@ -647,6 +648,13 @@ import { Organization } from '../../models/organization.model';
       border-radius: 6px;
     }
 
+    .percentage-badge {
+      padding: 2px 8px;
+      border-radius: 6px;
+      color: white;
+      font-size: 0.7rem;
+    }
+
     .medal-modern {
       font-size: 1.5rem;
     }
@@ -1140,5 +1148,12 @@ export class ReportsComponent implements OnInit {
      const wb: XLSX.WorkBook = XLSX.utils.book_new();
      XLSX.utils.book_append_sheet(wb, ws, 'Registry');
      XLSX.writeFile(wb, 'Rana_Mandal_Registry_Report.xlsx');
+  }
+
+  getPercentageColor(pct: number): string {
+    if (pct >= 90) return '#10b981'; // Green
+    if (pct >= 75) return '#3b82f6'; // Blue
+    if (pct >= 50) return '#f59e0b'; // Orange
+    return '#ef4444'; // Red
   }
 }
