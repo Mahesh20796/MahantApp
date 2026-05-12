@@ -62,7 +62,7 @@ import { Organization } from '../../models/organization.model';
 
           <!-- P/L/A Summary -->
           <div *ngIf="attendanceSummary" style="margin-bottom: 24px;">
-            <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+            <div class="mini-stat-card-row" style="display: flex; gap: 16px; margin-bottom: 16px;">
                <div class="mini-stat-card transparent" style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; background: var(--bg-main);">
                   <span class="mini-label" style="display: block;">Total Attendance</span>
                   <span class="mini-value success">{{ attendanceSummary.P }}</span>
@@ -507,6 +507,11 @@ import { Organization } from '../../models/organization.model';
 
       .btn-generate-report {
         width: 100%;
+      }
+
+      .mini-stat-card-row {
+        flex-direction: column !important;
+        gap: 12px !important;
       }
     }
 

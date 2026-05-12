@@ -24,7 +24,7 @@ Chart.register(...registerables);
 
     <!-- QUICK ACTIONS MOBILE SCROLL -->
     <div class="show-on-mobile animate-fade-in" style="margin-bottom: 24px;">
-       <div style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 12px; -webkit-overflow-scrolling: touch;">
+       <div style="display: flex; gap: 12px; flex-wrap: wrap; padding-bottom: 12px;">
           <button (click)="router.navigate(['/attendance'])" class="quick-action-pill att-icon">📝 Attendance</button>
           <button (click)="router.navigate(['/wallet'])" class="quick-action-pill wal-icon">💰 Wallet</button>
           <button (click)="router.navigate(['/members'])" class="quick-action-pill mem-icon">👥 Members</button>

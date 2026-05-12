@@ -47,8 +47,6 @@ body {
   line-height: 1.5;
   overflow-x: hidden;
   width: 100%;
-  position: fixed; /* Prevent rubber-band scrolling */
-  height: 100%;
   touch-action: manipulation;
 }
 
