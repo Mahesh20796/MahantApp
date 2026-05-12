@@ -458,7 +458,8 @@ export class SupabaseService {
       .select(`
         status,
         time_marked,
-        members(id, name)
+        members(id, name),
+        sabhas(time_schedule, end_time)
       `)
       .eq('status', 'P');
 
@@ -476,10 +477,32 @@ export class SupabaseService {
         
         acc[mid].count++;
         
-        // Calculate duration if check-in exists. 
-        // Note: For now, we use time_marked to verify attendance.
-        // We fallback to 1.5 hours per session to ensure data always displays.
-        acc[mid].totalHours += 1.5;
+        // Calculate duration based on Sabha Start and End time
+        const startTimeStr = curr.sabhas?.time_schedule;
+        const endTimeStr = curr.sabhas?.end_time;
+
+        if (startTimeStr && endTimeStr) {
+          try {
+            const [startH, startM] = startTimeStr.split(':').map(Number);
+            const [endH, endM] = endTimeStr.split(':').map(Number);
+            
+            let durationHours = (endH + endM/60) - (startH + startM/60);
+            
+            // Handle cross-midnight sabhas if any
+            if (durationHours < 0) durationHours += 24;
+            
+            if (durationHours > 0) {
+              acc[mid].totalHours += durationHours;
+            } else {
+              acc[mid].totalHours += 1.5; // Fallback
+            }
+          } catch (e) {
+            acc[mid].totalHours += 1.5; // Fallback on parse error
+          }
+        } else {
+          // Default to 1.5 hours per session if sabha times are missing
+          acc[mid].totalHours += 1.5;
+        }
         
         return acc;
     }, {});

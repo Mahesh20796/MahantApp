@@ -61,8 +61,13 @@ import { Sabha } from '../../models/sabha.model';
             </div>
             
             <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" style="font-weight: 800; color: var(--text-muted);">Meeting Start Time *</label>
+              <label class="form-label" style="font-weight: 800; color: var(--text-muted);">Start Time *</label>
               <input type="time" class="form-control premium-input" formControlName="timeSchedule">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-weight: 800; color: var(--text-muted);">End Time *</label>
+              <input type="time" class="form-control premium-input" formControlName="endTime">
             </div>
 
             <div style="display: flex; justify-content: flex-end;">
@@ -111,7 +116,10 @@ import { Sabha } from '../../models/sabha.model';
               <td>
                 <div style="display: flex; align-items: center; gap: 10px;">
                    <div style="width: 36px; height: 36px; background: var(--primary-soft); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary);">🕒</div>
-                   <span style="font-weight: 700; color: var(--text-dark); font-size: 0.95rem;">{{s.timeSchedule}}</span>
+                   <div style="display: flex; flex-direction: column;">
+                      <span style="font-weight: 700; color: var(--text-dark); font-size: 0.9rem;">{{s.timeSchedule}}</span>
+                      <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">to {{s.endTime || '--:--'}}</span>
+                   </div>
                 </div>
               </td>
               <td>
@@ -139,7 +147,7 @@ import { Sabha } from '../../models/sabha.model';
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
             <div>
               <div style="font-weight: 700; color: var(--text-dark); font-size: 1rem;">{{s.title}}</div>
-              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">📅 {{ s.sabhaDate ? (s.sabhaDate | date:'dd/MM/yyyy') : 'Unscheduled' }} • 🕒 {{s.timeSchedule}}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">📅 {{ s.sabhaDate ? (s.sabhaDate | date:'dd/MM/yyyy') : 'Unscheduled' }} • 🕒 {{s.timeSchedule}} - {{s.endTime}}</div>
             </div>
             <span class="badge">{{s.sabhaType}}</span>
           </div>
@@ -233,7 +241,8 @@ export class SabhaManagementComponent implements OnInit {
     title: ['Yuva Sabha', Validators.required],
     sabhaType: ['Weekly Sabha', Validators.required],
     sabhaDate: [new Date().toISOString().split('T')[0], Validators.required],
-    timeSchedule: ['', Validators.required]
+    timeSchedule: ['', Validators.required],
+    endTime: ['', Validators.required]
   });
 
   ngOnInit() {
@@ -275,6 +284,7 @@ export class SabhaManagementComponent implements OnInit {
           sabhaType: item.sabha_type,
           sabhaDate: item.sabha_date,
           timeSchedule: item.time_schedule,
+          endTime: item.end_time,
           assignedMembers: membersWithStatus,
           presentCount: presentCount
         };
@@ -303,7 +313,8 @@ export class SabhaManagementComponent implements OnInit {
       title: s.title,
       sabhaType: s.sabhaType,
       sabhaDate: s.sabhaDate,
-      timeSchedule: s.timeSchedule
+      timeSchedule: s.timeSchedule,
+      endTime: s.endTime
     });
   }
 
@@ -327,6 +338,7 @@ export class SabhaManagementComponent implements OnInit {
           title: formValue.title,
           sabha_type: formValue.sabhaType,
           time_schedule: formValue.timeSchedule,
+          end_time: formValue.endTime,
           sabha_date: formValue.sabhaDate
         };
 
