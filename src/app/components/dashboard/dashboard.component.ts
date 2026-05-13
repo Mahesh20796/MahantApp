@@ -330,18 +330,40 @@ Chart.register(...registerables);
     @media (max-width: 768px) {
        .activity-stats-grid { flex-direction: column; }
        .activity-legend { width: 100%; }
-       .bento-grid { gap: 16px; }
-       .stat-number { font-size: 2.2rem; }
-       .operations-hub { padding: 24px; }
+       .bento-grid { 
+          gap: 12px; 
+          display: flex;
+          flex-direction: column;
+       }
+       .stat-card-premium {
+          padding: 18px;
+          border-radius: 20px;
+       }
+       .stat-number { font-size: 2rem; }
+       .operations-hub { padding: 20px; border-radius: 24px; }
        .module-grid-modern { grid-template-columns: repeat(3, 1fr); gap: 10px; }
        .nav-module { padding: 14px; border-radius: 16px; }
        .nav-icon { font-size: 1.4rem; }
        .nav-text { font-size: 0.7rem; }
-       .chart-container { height: 220px; }
-       .page-header h1 { font-size: 1.8rem; }
+       .chart-item {
+          padding: 20px;
+          border-radius: 24px;
+       }
+       .chart-container { height: 240px; }
+       .page-header h1 { font-size: 1.6rem; }
+       
+       .birthday-card {
+          padding: 20px;
+          border-radius: 24px;
+       }
+       .birthday-item {
+          flex: 0 0 240px;
+          padding: 12px;
+       }
     }
     @media (max-width: 480px) {
        .module-grid-modern { grid-template-columns: repeat(2, 1fr); }
+       .stat-number { font-size: 1.8rem; }
     }
 
     .birthday-card {
