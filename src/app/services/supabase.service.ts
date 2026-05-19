@@ -427,11 +427,11 @@ export class SupabaseService {
   // ------------------------------------
   async getAttendanceSummaryReport(startDate: string, endDate: string, memberId?: string) {
     if (this.isMockMode) {
-      return { P: 150, A: 20, L: 10 };
+      return { P: 150, A: 20, L: 10, records: [] };
     }
     let query = this.supabase
       .from('attendance')
-      .select('status')
+      .select('status, time_marked, attendance_date, members(name, contact_details)')
       .gte('attendance_date', startDate)
       .lte('attendance_date', endDate);
       
@@ -442,10 +442,12 @@ export class SupabaseService {
     const { data, error } = await query;
     if (error) throw error;
     
-    return (data || []).reduce((acc: any, curr: any) => {
+    const summary = (data || []).reduce((acc: any, curr: any) => {
       acc[curr.status] = (acc[curr.status] || 0) + 1;
       return acc;
     }, { P: 0, A: 0, L: 0 });
+
+    return { ...summary, records: data || [] };
   }
 
   async getTopEarlyBirds(limit: number = 3, startDate?: string, endDate?: string) {
@@ -480,12 +482,20 @@ export class SupabaseService {
         // Calculate duration based on Sabha Start and End time
         const startTimeStr = curr.sabhas?.time_schedule;
         const endTimeStr = curr.sabhas?.end_time;
-        const checkInTime = curr.time_marked ? new Date(curr.time_marked) : null;
+        // Strip timezone info to parse strictly as local time to avoid IST shift bug
+        const checkInTimeStr = curr.time_marked ? curr.time_marked.replace(/Z|[-+]\d{2}(:?\d{2})?$/, '') : null;
+        const checkInTime = checkInTimeStr ? new Date(checkInTimeStr) : null;
 
         if (startTimeStr && endTimeStr) {
           try {
             const getMinutes = (str: string) => {
-               const [h, m] = str.split(':').map(Number);
+               const match = str.trim().match(/^(\d+):(\d+)\s*(AM|PM)?/i);
+               if (!match) return 0;
+               let h = Number(match[1]);
+               const m = Number(match[2]);
+               const modifier = match[3] ? match[3].toUpperCase() : null;
+               if (modifier === 'PM' && h < 12) h += 12;
+               if (modifier === 'AM' && h === 12) h = 0;
                return (h * 60) + m;
             };
 
@@ -495,11 +505,22 @@ export class SupabaseService {
             if (totalSabhaMinutes < 0) totalSabhaMinutes += 1440;
 
             let memberAttendanceMinutes = 0;
-            if (checkInTime) {
+            if (checkInTime && !isNaN(checkInTime.getTime())) {
                const checkInMins = (checkInTime.getHours() * 60) + checkInTime.getMinutes();
-               memberAttendanceMinutes = sabhaEndMins - checkInMins;
-               if (memberAttendanceMinutes < 0) memberAttendanceMinutes += 1440;
-               memberAttendanceMinutes = Math.max(0, Math.min(memberAttendanceMinutes, totalSabhaMinutes));
+               let checkInRel = checkInMins - sabhaStartMins;
+               
+               // Handle sabha crossing midnight
+               if (checkInRel < -720) {
+                 checkInRel += 1440;
+               }
+
+               if (checkInRel < 0) {
+                 memberAttendanceMinutes = totalSabhaMinutes; // checked in early
+               } else if (checkInRel > totalSabhaMinutes) {
+                 memberAttendanceMinutes = 0; // checked in after it ended
+               } else {
+                 memberAttendanceMinutes = totalSabhaMinutes - checkInRel;
+               }
             } else {
                memberAttendanceMinutes = totalSabhaMinutes;
             }

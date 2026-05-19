@@ -975,6 +975,54 @@ export class ReportsComponent implements OnInit {
         headStyles: { fillColor: [30, 58, 138], fontStyle: 'bold' },
         didDrawPage: footer
       });
+
+      if (this.attendanceSummary.records && this.attendanceSummary.records.length > 0) {
+         let finalY = (doc as any).lastAutoTable.finalY || 80;
+         doc.setFontSize(12);
+         doc.setTextColor(30, 58, 138);
+         doc.text('Detailed Member Records', 14, finalY + 15);
+
+         let sortedRecords = [...this.attendanceSummary.records];
+         sortedRecords.sort((a, b) => {
+            const timeA = a.time_marked ? new Date(a.time_marked.replace(/Z|[-+]\d{2}(:?\d{2})?$/, '')).getTime() : Infinity;
+            const timeB = b.time_marked ? new Date(b.time_marked.replace(/Z|[-+]\d{2}(:?\d{2})?$/, '')).getTime() : Infinity;
+            return timeA - timeB;
+         });
+
+         const tableData = sortedRecords.map((r: any, index: number) => {
+            const name = r.members?.name || 'N/A';
+            const mobile = r.members?.contact_details || 'N/A';
+            const status = r.status || 'N/A';
+            
+            let logTime = '--:--';
+            if (r.time_marked) {
+               const cleanTime = r.time_marked.replace(/Z|[-+]\d{2}(:?\d{2})?$/, '');
+               const d = new Date(cleanTime);
+               if (!isNaN(d.getTime())) {
+                  logTime = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+               }
+            }
+
+            return [
+               index + 1,
+               this.formatDateDMY(r.attendance_date),
+               name,
+               mobile,
+               logTime,
+               status
+            ];
+         });
+
+         autoTable(doc, {
+           startY: finalY + 22,
+           head: [['Sr. No.', 'Date', 'Member Name', 'Mobile No.', 'Log Time', 'Status']],
+           body: tableData,
+           theme: 'striped',
+           headStyles: { fillColor: [230, 81, 0] },
+           didDrawPage: footer
+         });
+      }
+
       doc.save(`Rana_Mandal_Attendance_${this.attendanceRange.start}.pdf`);
 
     } else if (type === 'financial_range') {
