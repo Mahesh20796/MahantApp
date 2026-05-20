@@ -114,6 +114,16 @@ import { Organization } from '../../models/organization.model';
               <label class="form-label">To Date</label>
               <input type="date" lang="en-IN" class="form-control premium-input" [(ngModel)]="leaderboardRange.end">
             </div>
+            <div style="flex: 1;">
+              <label class="form-label">Top Records</label>
+              <select class="form-control premium-input" [(ngModel)]="excellenceLimit">
+                 <option [value]="5">Top 5</option>
+                 <option [value]="10">Top 10</option>
+                 <option [value]="20">Top 20</option>
+                 <option [value]="50">Top 50</option>
+                 <option [value]="100">Top 100</option>
+              </select>
+            </div>
             <button class="btn btn-generate-report" (click)="fetchLeaderboard()" [disabled]="isLoadingLeaderboard">
                <span *ngIf="!isLoadingLeaderboard">⚡ Generate Report</span>
                <span *ngIf="isLoadingLeaderboard" class="spinner-small"></span>
@@ -133,6 +143,12 @@ import { Organization } from '../../models/organization.model';
 
           <!-- Results Section -->
           <div class="top-list" *ngIf="hasGeneratedLeaderboard && !isLoadingLeaderboard">
+             <div class="action-buttons-row" style="margin-top: 0; margin-bottom: 16px;" *ngIf="topBirds.length > 0">
+                <button class="btn btn-danger" (click)="exportToPDF('excellence')" style="flex: 1; justify-content: center; height: 44px; font-size: 0.9rem;">
+                   📄 Download Excellence Report (PDF)
+                </button>
+             </div>
+             
              <div *ngFor="let bird of topBirds; let i = index" class="bird-item-modern" 
                   [class.gold-border]="i === 0" [class.silver-border]="i === 1" [class.bronze-border]="i === 2">
                 <div class="rank-modern" [class.rank-1]="i === 0" [class.rank-2]="i === 1" [class.rank-3]="i === 2">{{ i + 1 }}</div>
@@ -697,6 +713,7 @@ export class ReportsComponent implements OnInit {
 
   isLoadingLeaderboard = false;
   hasGeneratedLeaderboard = false;
+  excellenceLimit: number = 10;
 
   attendanceRange = {
     start: new Date(new Date().setDate(1)).toISOString().split('T')[0],
@@ -783,7 +800,7 @@ export class ReportsComponent implements OnInit {
     try {
       // Small artificial delay for premium feel
       await new Promise(resolve => setTimeout(resolve, 800));
-      this.topBirds = await this.supabase.getTopEarlyBirds(10, this.leaderboardRange.start, this.leaderboardRange.end);
+      this.topBirds = await this.supabase.getTopEarlyBirds(Number(this.excellenceLimit), this.leaderboardRange.start, this.leaderboardRange.end);
     } catch (e) {
       console.error('Leaderboard error', e);
     } finally {
@@ -1024,6 +1041,27 @@ export class ReportsComponent implements OnInit {
       }
 
       doc.save(`Rana_Mandal_Attendance_${this.attendanceRange.start}.pdf`);
+
+    } else if (type === 'excellence') {
+      doc.setFontSize(12);
+      doc.setTextColor(50);
+      doc.text(`Attendance Excellence Report (Top ${this.excellenceLimit}): ${this.formatDateDMY(this.leaderboardRange.start)} to ${this.formatDateDMY(this.leaderboardRange.end)}`, 14, 45);
+      
+      autoTable(doc, {
+        startY: 52,
+        head: [['Rank', 'Member Name', 'Total Presents', 'Total Hours', 'Attendance %']],
+        body: this.topBirds.map((bird, i) => [
+           i + 1,
+           bird.name,
+           bird.count,
+           `${(bird.totalHours || 0).toFixed(1)}h`,
+           `${(bird.percentage || 0).toFixed(1)}%`
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [30, 58, 138], fontStyle: 'bold' },
+        didDrawPage: footer
+      });
+      doc.save(`Rana_Mandal_Excellence_${this.leaderboardRange.start}.pdf`);
 
     } else if (type === 'financial_range') {
       doc.setFontSize(12);
