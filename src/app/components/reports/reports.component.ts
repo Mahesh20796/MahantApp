@@ -771,7 +771,6 @@ export class ReportsComponent implements OnInit {
 
   async ngOnInit() {
     await this.fetchAttendanceSummary();
-    await this.fetchLeaderboard();
     const [members, organizations] = await Promise.all([
       this.supabase.getMembers(),
       this.supabase.getOrganizations()
