@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sabha Management System - SOP & Documentation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+            background-color: #fff;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 32px;
+            text-transform: uppercase;
+        }
+        .header p {
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        h2 {
+            color: #2980b9;
+            border-left: 5px solid #2980b9;
+            padding-left: 15px;
+            margin-top: 35px;
+            text-transform: uppercase;
+            font-size: 22px;
+        }
+        h3 {
+            color: #34495e;
+            margin-top: 25px;
+            font-size: 18px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #bdc3c7;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #ecf0f1;
+            color: #2c3e50;
+        }
+        .highlight {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #e0e0e0;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            text-align: center;
+            font-size: 12px;
+            color: #95a5a6;
+        }
+        .toc {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .toc ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin-bottom: 8px;
+        }
+        .toc a {
+            text-decoration: none;
+            color: #2980b9;
+        }
+        @media print {
+            body { padding: 0; }
+            .toc { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Sabha Management System</h1>
+        <p>Standard Operating Procedure & Project Documentation</p>
+        <p><strong>Version:</strong> 1.0 | <strong>Date:</strong> April 30, 2026</p>
+    </div>
+
+    <div class="toc">
+        <h3>Table of Contents</h3>
+        <ul>
+            <li>1. <a href="#overview">Project Overview</a></li>
+            <li>2. <a href="#tech-stack">Technology Stack</a></li>
+            <li>3. <a href="#modules">Module-Specific Analysis</a></li>
+            <li>4. <a href="#operations">Operational Procedures (How-To)</a></li>
+            <li>5. <a href="#maintenance">System Maintenance & Development</a></li>
+        </ul>
+    </div>
+
+    <h2 id="overview">1. Project Overview</h2>
+    <p>The <strong>Sabha Management System</strong> is a digital command center designed to manage community gatherings (Sabhas) with high efficiency. It streamlines member registration, automates attendance tracking, manages financial transactions (deposits/withdrawals), and provides insightful data analytics to leadership.</p>
+
+    <h2 id="tech-stack">2. Technology Stack</h2>
+    <table>
+        <tr>
+            <th>Category</th>
+            <th>Technology Used</th>
+            <th>Purpose</th>
+        </tr>
+        <tr>
+            <td>Frontend Framework</td>
+            <td>Angular 18+</td>
+            <td>Core application structure and component logic.</td>
+        </tr>
+        <tr>
+            <td>Backend & Database</td>
+            <td>Supabase (PostgreSQL)</td>
+            <td>Secure data storage, Authentication, and real-time syncing.</td>
+        </tr>
+        <tr>
+            <td>UI Styling</td>
+            <td>Vanilla CSS & Bento Grid</td>
+            <td>Premium, responsive design and layout optimization.</td>
+        </tr>
+        <tr>
+            <td>Data Visualization</td>
+            <td>Chart.js</td>
+            <td>Interactive graphs for attendance and financial trends.</td>
+        </tr>
+        <tr>
+            <td>PDF Generation</td>
+            <td>jsPDF / AutoTable</td>
+            <td>Exporting professional attendance and financial reports.</td>
+        </tr>
+        <tr>
+            <td>Data Export</td>
+            <td>SheetJS (XLSX)</td>
+            <td>Exporting raw data to Excel formats.</td>
+        </tr>
+    </table>
+
+    <h2 id="modules">3. Module-Specific Analysis</h2>
+
+    <h3>3.1 Authentication & RBAC</h3>
+    <p>The system implements <strong>Role-Based Access Control (RBAC)</strong>. Depending on the user's role (Admin, Volunteer, Member), the application dynamically filters available features and restricts unauthorized actions. This ensures data integrity and security.</p>
+
+    <h3>3.2 Dashboard (Analytics Hub)</h3>
+    <p>The dashboard provides an immediate "at-a-glance" status of the organization. It features:</p>
+    <ul>
+        <li><strong>Real-time Counters:</strong> Total member count and current organization balance.</li>
+        <li><strong>Trend Analysis:</strong> Weekly attendance line charts to track community growth.</li>
+        <li><strong>Financial Tracking:</strong> Monthly balance trends to monitor fund sustainability.</li>
+    </ul>
+
+    <h3>3.3 Member Management</h3>
+    <p>A centralized repository for all community members. Each member profile tracks personal details, contact information, role within the community, and their individual "wallet" balance for financial transparency.</p>
+
+    <h3>3.4 Attendance Management</h3>
+    <p>This module is integrated with the <strong>Sabha Schedule</strong>. It automatically suggests the most relevant Sabha session based on the current date. Marking attendance is a one-click process that saves records for all members simultaneously using efficient database upsert logic.</p>
+
+    <h3>3.5 Wallet & Financials</h3>
+    <p>Allows for individual transaction entries and <strong>Bulk Monthly Collections</strong>. When a transaction is saved, the system automatically recalculates the affected member's balance and updates the global organization fund.</p>
+
+    <h2 id="operations">4. Operational Procedures (How-To)</h2>
+
+    <div class="highlight">
+        <h3>How to Manage Member Data</h3>
+        <p>1. Go to <strong>Member Management</strong>.<br>
+        2. Click "Add Member" to register a new person.<br>
+        3. Use the Search bar to find existing members and click the "Edit" icon to update their profile or status.</p>
+    </div>
+
+    <div class="highlight">
+        <h3>How to Record Attendance</h3>
+        <p>1. Navigate to <strong>Attendance</strong>.<br>
+        2. Ensure the correct <strong>Sabha Date</strong> and <strong>Title</strong> are selected.<br>
+        3. Select P (Present), A (Absent), or L (Leave) for each member.<br>
+        4. Click <strong>Save Attendance</strong> at the bottom of the page.</p>
+    </div>
+
+    <div class="highlight">
+        <h3>How to Export Reports</h3>
+        <p>1. Open the <strong>Reports</strong> module.<br>
+        2. Select the desired date range.<br>
+        3. Choose between <strong>PDF</strong> for professional presentation or <strong>Excel</strong> for data analysis.<br>
+        4. Click the respective download button.</p>
+    </div>
+
+    <h2 id="maintenance">5. System Maintenance & Development</h2>
+    <p>The system is built with a <strong>Service-Oriented Architecture</strong>. All database logic resides in <code>supabase.service.ts</code>. The application also features a "Mock Mode" which allows developers to test features even without an active internet connection by using local sample data.</p>
+
+    <div class="footer">
+        <p>Documentation generated by Antigravity AI.</p>
+        <p>&copy; 2026 Sabha Management System. All rights reserved.</p>
+    </div>
+
+</body>
+</html>
